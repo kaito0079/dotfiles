@@ -28,6 +28,20 @@ Build macOS from Makefile.
 make
 ```
 
+## Update
+
+Move to target repository.
+
+```shell
+cd dotfiles
+```
+
+Build macOS from Makefile.
+
+```shell
+make update
+```
+
 ## References
 
 - [Macの環境をdotfilesでセットアップしてみた改](https://zenn.dev/tsukuboshi/articles/6e82aef942d9af)

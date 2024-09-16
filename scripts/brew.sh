@@ -5,4 +5,5 @@ if [ "$(uname)" != "Darwin" ] ; then
 	exit 1
 fi
 
+echo "Brewfileに記載されているパッケージをインストールします"
 brew bundle --global
