@@ -31,10 +31,8 @@ PROMPT='
 [%B%F{red}%n@%m%f%b:%F{green}%~%f]%F{cyan}$vcs_info_msg_0_%f
 %F{yellow}$%f '
 
-# alias
-alias ls='ls -GF'
-alias la='ls -aGF'
-alias ll='ls -lGF'
+# Load aliases
+source ~/dotfiles/.bin/aliases.zsh
 
 if [ "$(uname)" = "Darwin" ] ; then
     source ~/dotfiles/.bin/mac.zsh
