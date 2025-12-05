@@ -2,5 +2,13 @@
 .DS_Store
 
 # Local setteing
-*.local.*
+*.local
 *.local/
+
+# Private configuration files (Git管理外)
+*.secret
+*.key
+*.pem
+*.token
+.env
+.env.local
