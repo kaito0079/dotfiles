@@ -1,0 +1,44 @@
+[core]
+  pager = delta
+  ignorecase = false
+
+[interactive]
+  diffFilter = delta --color-only
+
+[delta]
+  navigate = true    # n/N で次の/前のファイルに移動
+  light = false      # ダークテーマを使用
+  side-by-side = true  # サイドバイサイド表示を有効化
+  line-numbers = true  # 行番号を表示
+  syntax-theme = "GitHub"  # シンタックスハイライトのテーマ
+  features = decorations  # 装飾機能を有効化
+
+[delta "decorations"]
+  commit-decoration-style = blue box    # コミット情報の装飾スタイル
+  file-decoration-style = blue box      # ファイル名の装飾スタイル
+  hunk-header-decoration-style = blue box  # 変更ブロック（hunk）ヘッダーの装飾スタイル
+  file-style = blue ul                  # ファイル名のスタイル（青、下線）
+  hunk-header-style = blue ul           # 変更ブロックヘッダーのスタイル（青、下線）
+
+[merge]
+  # diff3スタイル: マージコンフリクト時に、共通の祖先、現在のブランチ、マージするブランチの3つを表示
+  # これにより、どの変更がどこから来たのかが分かりやすくなる
+  conflictstyle = diff3
+
+[diff]
+  # 移動されたコードブロックを色付けして表示（コードの移動やリファクタリングを視覚的に識別しやすくする）
+  colorMoved = default
+
+[pwt]
+	# worktree のディレクトリ名に <repo>-- prefix を付けない
+	# (<ghq_root>/.worktrees/<host>/<owner>/<repo>/ 配下に配置するため、repo 名は path で分離済み)
+	# 実際の base は pwt-base.zsh の chpwd hook が GIT_PARALLEL_WORKTREES_BASE で設定する
+	worktreePrefix = none
+
+[init]
+	defaultBranch = main
+
+# 個人情報やマシン固有のパスは ~/.gitconfig.local に書く
+# テンプレート: .bin/.gitconfig.local.example
+[include]
+	path = ~/.gitconfig.local
