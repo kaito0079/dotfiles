@@ -1,0 +1,15 @@
+# Ghostty設定ファイル
+# 参考: https://ghostty.org/docs/config/reference
+
+# フォント
+font-family = HackGen Console NF
+font-size = 14
+
+# 配色
+background = #000000
+foreground = #e0e0e0
+cursor-color = #ffffff
+
+# 透過・ブラー
+background-opacity = 0.85
+background-blur-radius = 20
