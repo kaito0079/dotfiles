@@ -38,7 +38,7 @@ if [ "$(uname)" = "Darwin" ] ; then
     source ~/dotfiles/.bin/mac.zsh
 fi
 
-# vimをHomevrew版へ変更
+# vim を Homebrew 版へ変更
 export PATH="/opt/homebrew/bin:$PATH"
 
 # Claude Codeのインストールで追加
