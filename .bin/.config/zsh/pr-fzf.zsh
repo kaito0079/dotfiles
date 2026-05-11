@@ -208,11 +208,21 @@ fragment prFields on PullRequest {
     fi
 
     # リモートトラッキング ref を作り upstream を設定する (pwt switch 後の worktree でも引き継がれる)
-    if git fetch origin "+refs/heads/$branch:refs/remotes/origin/$branch" 2>/dev/null; then
+    local fetch_out fetch_rc
+    fetch_out=$(git fetch origin "+refs/heads/$branch:refs/remotes/origin/$branch" 2>&1)
+    fetch_rc=$?
+
+    if [ $fetch_rc -eq 0 ]; then
         git branch --set-upstream-to="origin/$branch" "$branch" >/dev/null \
             && echo "✓ upstream を origin/$branch に設定しました"
-    else
+    elif git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+        git branch --set-upstream-to="origin/$branch" "$branch" >/dev/null \
+            && echo "✓ 既存の origin/$branch を upstream に設定しました"
+    elif [[ "$fetch_out" == *"couldn't find remote ref"* ]]; then
         echo "ℹ️  origin に同名ブランチが無いため upstream 設定をスキップしました"
+    else
+        echo "⚠️  upstream 設定に失敗しました (原因不明):" >&2
+        echo "$fetch_out" >&2
     fi
 
     # レビュー用途は <base>/review/<branch> に配置する
