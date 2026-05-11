@@ -15,6 +15,8 @@
 # 選択後の挙動:
 #   - ローカルに repo が無ければ ghq get で clone
 #   - Enter: 既存 worktree があればそこへ cd し fetch + ff-merge、無ければ pwt で新規作成
+#   - レビュー用途 (author/assignee に含まれず review-requested/reviewed-by のみで
+#     ヒットした PR) は <ghq_root>/.worktrees/<repo>/review/<branch> に配置する
 #
 # 検索対象 (fzf):
 #   PR 番号 / タイトル / ブランチ名 / ラベル名 / リポジトリ / 作者
@@ -60,8 +62,9 @@ fragment prFields on PullRequest {
   labels(first: 20) { nodes { name color } }
 }'
 
-    # jq で TSV を生成: repo \t number \t branch \t display(ANSI 付き)
+    # jq で TSV を生成: repo \t number \t branch \t display(ANSI 付き) \t kind
     # ラベルは GitHub のカラーコードを 24bit ANSI 背景色で表示する
+    # kind は own / review (author/assignee に含まれず review 系のみでヒットしたら review)
     local rows
     rows=$(gh api graphql -f query="$gql" | jq -r '
         def hex_to_int:
@@ -79,28 +82,37 @@ fragment prFields on PullRequest {
           (if $lum > 128 then "30" else "97" end) as $fg |
           "[48;2;\($r);\($g);\($b);\($fg)m \(.name) [0m";
 
-        [.data.author.nodes, .data.assignee.nodes,
-         .data.reviewRequested.nodes, .data.reviewedBy.nodes]
+        def tag($s):
+          map(select(. != null and .number != null and .headRefName != null)
+              | . + {_source: $s});
+
+        [ ((.data.author.nodes // [])          | tag("own")),
+          ((.data.assignee.nodes // [])        | tag("own")),
+          ((.data.reviewRequested.nodes // []) | tag("review")),
+          ((.data.reviewedBy.nodes // [])      | tag("review")) ]
         | add
-        | map(select(. != null and .number != null and .headRefName != null))
-        | unique_by(.repository.nameWithOwner + "#" + (.number|tostring))
+        | group_by(.repository.nameWithOwner + "#" + (.number|tostring))
+        | map(.[0] + {_sources: (map(._source) | unique)})
         | sort_by(.updatedAt) | reverse
         | .[]
         | (.labels.nodes // []
            | map(select(.name != null and .color != null))
            | map(label_ansi)
            | join(" ")) as $labels
+        | ((._sources | index("own")) == null) as $is_review
         | [
             .repository.nameWithOwner,
             (.number|tostring),
             .headRefName,
             ("#\(.number)  "
+             + (if $is_review then "[Review] " else "" end)
              + (if .isDraft then "[Draft] " else "" end)
              + .title
              + "  \(.headRefName)"
              + (if ($labels | length) > 0 then "  \($labels)" else "" end)
              + "  (\(.repository.nameWithOwner) @\(.author.login // "?"))"
-            )
+            ),
+            (if $is_review then "review" else "own" end)
           ]
         | @tsv
     ')
@@ -125,8 +137,8 @@ fragment prFields on PullRequest {
 
     [ -z "$selected" ] && return 0
 
-    local repo_full pr_num branch
-    IFS=$'\t' read -r repo_full pr_num branch _ <<< "$selected"
+    local repo_full pr_num branch kind
+    IFS=$'\t' read -r repo_full pr_num branch _display kind <<< "$selected"
 
     if [ -z "$repo_full" ] || [ -z "$pr_num" ] || [ -z "$branch" ]; then
         echo "エラー: PR 情報のパースに失敗しました" >&2
@@ -193,6 +205,26 @@ fragment prFields on PullRequest {
             echo "エラー: PR の fetch に失敗しました" >&2
             return 1
         fi
+    fi
+
+    # レビュー用途は <base>/review/<branch> に配置する
+    # GIT_PARALLEL_WORKTREES_BASE は pwt-base.zsh の chpwd フックで <ghq_root>/.worktrees/<repo> に export 済み
+    # pwt switch 成功時は cd → chpwd で自動的に再計算されるため、明示復元は失敗パスのみ必要
+    if [ "$kind" = "review" ]; then
+        if [ -z "${GIT_PARALLEL_WORKTREES_BASE:-}" ]; then
+            echo "エラー: GIT_PARALLEL_WORKTREES_BASE が未設定です (pwt-base.zsh が読み込まれていない可能性)" >&2
+            return 1
+        fi
+        local _prev_base="$GIT_PARALLEL_WORKTREES_BASE"
+        local _review_base="$_prev_base/review"
+        mkdir -p "$_review_base" || { echo "エラー: $_review_base の作成に失敗しました" >&2; return 1; }
+        export GIT_PARALLEL_WORKTREES_BASE="$_review_base"
+        pwt switch -c "$branch"
+        local _rc=$?
+        if [ "$_rc" -ne 0 ]; then
+            export GIT_PARALLEL_WORKTREES_BASE="$_prev_base"
+        fi
+        return $_rc
     fi
 
     pwt switch -c "$branch"
