@@ -207,6 +207,14 @@ fragment prFields on PullRequest {
         fi
     fi
 
+    # リモートトラッキング ref を作り upstream を設定する (pwt switch 後の worktree でも引き継がれる)
+    if git fetch origin "+refs/heads/$branch:refs/remotes/origin/$branch" 2>/dev/null; then
+        git branch --set-upstream-to="origin/$branch" "$branch" >/dev/null \
+            && echo "✓ upstream を origin/$branch に設定しました"
+    else
+        echo "ℹ️  origin に同名ブランチが無いため upstream 設定をスキップしました"
+    fi
+
     # レビュー用途は <base>/review/<branch> に配置する
     # GIT_PARALLEL_WORKTREES_BASE は pwt-base.zsh の chpwd フックで <ghq_root>/.worktrees/<repo> に export 済み
     # pwt switch 成功時は cd → chpwd で自動的に再計算されるため、明示復元は失敗パスのみ必要
