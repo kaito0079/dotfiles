@@ -69,7 +69,7 @@ defaults write -g ApplePressAndHoldEnabled -bool false
 
 
 # Install brew
-#(echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> /Users/kaito.tada/.zprofile
+#(echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> "$HOME/.zprofile"
 #eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # サービスの自動起動を制御
