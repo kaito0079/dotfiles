@@ -64,3 +64,9 @@ source ~/.config/zsh/ghq-fzf.zsh
 
 # GitHub の PR を fzf で検索して worktree に移動する (pr-switch / Ctrl+P)
 source ~/.config/zsh/pr-fzf.zsh
+
+# cmux のワークスペース色を git origin URL のハッシュから自動決定 (chpwd 連動)
+source ~/.config/zsh/cmux-workspace-color.zsh
+
+# cmux サイドバーに現在の git ブランチをピル表示 (chpwd/precmd 連動)
+source ~/.config/zsh/cmux-workspace-branch.zsh
