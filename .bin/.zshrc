@@ -70,3 +70,8 @@ source ~/.config/zsh/cmux-workspace-color.zsh
 
 # cmux サイドバーに現在の git ブランチをピル表示 (chpwd/precmd 連動)
 source ~/.config/zsh/cmux-workspace-branch.zsh
+
+# takumi guard: pip / uv のパッケージ取得をセキュアプロキシ経由に固定 (悪性パッケージ対策)
+# https://shisho.dev/docs/ja/t/guard/quickstart/pypi
+export PIP_INDEX_URL=https://pypi.flatt.tech/simple/
+export UV_INDEX_URL=https://pypi.flatt.tech/simple/
