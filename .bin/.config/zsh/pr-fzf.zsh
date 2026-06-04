@@ -24,6 +24,42 @@
 # 依存:
 #   gh, fzf, ghq, pwt, jq, git
 
+# upstream を origin/<branch> に設定する。
+# - 既に設定済みなら no-op
+# - fork PR (isCrossRepository=true) はそもそも origin にブランチが無いのでスキップ
+# - それ以外は GraphQL から得た PR head OID を使って refs/remotes/origin/<branch> を
+#   直接 update-ref する。"+refs/heads/<branch>:refs/remotes/origin/<branch>" の
+#   fetch は GitHub の ref advertise の transient lag で時々 "couldn't find remote
+#   ref" で落ちるため使わない (ローカルには pull/<N>/head 経由で同じ OID の commit
+#   が既に入っているので update-ref に必要な object は揃っている前提)。
+_pr_ensure_upstream() {
+    local branch="$1"
+    local is_fork="$2"
+    local head_oid="$3"
+
+    if git rev-parse --abbrev-ref "$branch@{upstream}" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    if [ "$is_fork" = "true" ]; then
+        echo "ℹ️  fork PR のため upstream 設定をスキップしました"
+        return 0
+    fi
+
+    if [ -z "$head_oid" ]; then
+        echo "⚠️  PR head OID が無く upstream 設定をスキップしました" >&2
+        return 1
+    fi
+
+    if ! git update-ref "refs/remotes/origin/$branch" "$head_oid"; then
+        echo "⚠️  refs/remotes/origin/$branch の更新に失敗しました" >&2
+        return 1
+    fi
+
+    git branch --set-upstream-to="origin/$branch" "$branch" >/dev/null \
+        && echo "✓ upstream を origin/$branch に設定しました"
+}
+
 pr-switch() {
     for cmd in gh fzf ghq pwt jq git; do
         command -v $cmd >/dev/null 2>&1 || {
@@ -57,14 +93,17 @@ fragment prFields on PullRequest {
   isDraft
   updatedAt
   headRefName
+  headRefOid
+  isCrossRepository
   author { login }
   repository { nameWithOwner }
   labels(first: 20) { nodes { name color } }
 }'
 
-    # jq で TSV を生成: repo \t number \t branch \t display(ANSI 付き) \t kind
+    # jq で TSV を生成: repo \t number \t branch \t display(ANSI 付き) \t kind \t is_fork \t head_oid
     # ラベルは GitHub のカラーコードを 24bit ANSI 背景色で表示する
     # kind は own / review (author/assignee に含まれず review 系のみでヒットしたら review)
+    # is_fork / head_oid は upstream 設定 (refs/remotes/origin/<branch> を直接組み立てる) で使う
     local rows
     rows=$(gh api graphql -f query="$gql" | jq -r '
         def hex_to_int:
@@ -112,7 +151,9 @@ fragment prFields on PullRequest {
              + (if ($labels | length) > 0 then "  \($labels)" else "" end)
              + "  (\(.repository.nameWithOwner) @\(.author.login // "?"))"
             ),
-            (if $is_review then "review" else "own" end)
+            (if $is_review then "review" else "own" end),
+            (.isCrossRepository | tostring),
+            .headRefOid
           ]
         | @tsv
     ')
@@ -137,8 +178,8 @@ fragment prFields on PullRequest {
 
     [ -z "$selected" ] && return 0
 
-    local repo_full pr_num branch kind
-    IFS=$'\t' read -r repo_full pr_num branch _display kind <<< "$selected"
+    local repo_full pr_num branch kind is_fork head_oid
+    IFS=$'\t' read -r repo_full pr_num branch _display kind is_fork head_oid <<< "$selected"
 
     if [ -z "$repo_full" ] || [ -z "$pr_num" ] || [ -z "$branch" ]; then
         echo "エラー: PR 情報のパースに失敗しました" >&2
@@ -177,6 +218,11 @@ fragment prFields on PullRequest {
             return 1
         fi
 
+        # この経路は元々 upstream を触っていなかったため、過去に未設定のまま
+        # 作られた worktree を再訪したケースが恒久的に直らなかった。
+        # ここで一度だけ拾い直す (設定済みなら no-op)。
+        _pr_ensure_upstream "$branch" "$is_fork" "$head_oid"
+
         # uncommitted changes があれば更新をスキップ
         if ! git diff --quiet || ! git diff --cached --quiet; then
             echo "⚠️  uncommitted changes があるため更新をスキップしました"
@@ -207,23 +253,8 @@ fragment prFields on PullRequest {
         fi
     fi
 
-    # リモートトラッキング ref を作り upstream を設定する (pwt switch 後の worktree でも引き継がれる)
-    local fetch_out fetch_rc
-    fetch_out=$(git fetch origin "+refs/heads/$branch:refs/remotes/origin/$branch" 2>&1)
-    fetch_rc=$?
-
-    if [ $fetch_rc -eq 0 ]; then
-        git branch --set-upstream-to="origin/$branch" "$branch" >/dev/null \
-            && echo "✓ upstream を origin/$branch に設定しました"
-    elif git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
-        git branch --set-upstream-to="origin/$branch" "$branch" >/dev/null \
-            && echo "✓ 既存の origin/$branch を upstream に設定しました"
-    elif [[ "$fetch_out" == *"couldn't find remote ref"* ]]; then
-        echo "ℹ️  origin に同名ブランチが無いため upstream 設定をスキップしました"
-    else
-        echo "⚠️  upstream 設定に失敗しました (原因不明):" >&2
-        echo "$fetch_out" >&2
-    fi
+    # upstream を origin/<branch> に貼る (pwt switch 後の worktree でも引き継がれる)
+    _pr_ensure_upstream "$branch" "$is_fork" "$head_oid"
 
     # レビュー用途は <base>/review/<branch> に配置する
     # GIT_PARALLEL_WORKTREES_BASE は pwt-base.zsh の chpwd フックで <ghq_root>/.worktrees/<repo> に export 済み
