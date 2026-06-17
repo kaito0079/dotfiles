@@ -68,7 +68,7 @@ pr-switch() {
         }
     done
 
-    echo "PR 一覧を取得中..." >&2
+    echo "PR 一覧を取得中..." >/dev/tty
 
     # 4 つの検索を 1 回の GraphQL コールにまとめる
     # REST の gh search prs と違い headRefName / labels を一括取得できる
@@ -243,12 +243,15 @@ fragment prFields on PullRequest {
     fi
 
     # --- 既存 worktree が無い場合: pwt で新規作成 ---
+    # pwt switch -c が失敗した場合に元ディレクトリへ戻れるよう先に保存する
+    local _orig_dir="$PWD"
     cd "$repo_path" || return 1
 
     if ! git show-ref --verify --quiet "refs/heads/$branch"; then
         echo "PR #$pr_num (branch: $branch) を fetch 中..."
         if ! git fetch origin "pull/$pr_num/head:$branch"; then
             echo "エラー: PR の fetch に失敗しました" >&2
+            cd "$_orig_dir" 2>/dev/null || true
             return 1
         fi
     fi
@@ -259,24 +262,53 @@ fragment prFields on PullRequest {
     # レビュー用途は <base>/review/<branch> に配置する
     # GIT_PARALLEL_WORKTREES_BASE は pwt-base.zsh の chpwd フックで <ghq_root>/.worktrees/<repo> に export 済み
     # pwt switch 成功時は cd → chpwd で自動的に再計算されるため、明示復元は失敗パスのみ必要
+    # stale ディレクトリを kind に関わらず両パスで検索する
+    # git が有効なら場所を問わず使い回し、無効なら削除を案内して止まる
+    # (kind は新規作成時のみ使う)
+    if [ -n "${GIT_PARALLEL_WORKTREES_BASE:-}" ]; then
+        local _candidate
+        for _candidate in \
+            "$GIT_PARALLEL_WORKTREES_BASE/$branch" \
+            "$GIT_PARALLEL_WORKTREES_BASE/review/$branch"
+        do
+            [ -d "$_candidate" ] || continue
+            if git -C "$_candidate" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+                echo "既存 worktree を使用: $_candidate"
+                cd "$_candidate" || { cd "$_orig_dir" 2>/dev/null || true; return 1; }
+                return 0
+            else
+                echo "エラー: worktree ディレクトリが残存していますが git が使えません" >&2
+                echo "  Docker 等が作成した root 権限ファイルが残っています。" >&2
+                printf "  削除後に再実行してください: sudo rm -rf \"%s\"\n" "$_candidate" >&2
+                cd "$_orig_dir" 2>/dev/null || true
+                return 1
+            fi
+        done
+    fi
+
+    # stale なし → kind に応じて新規作成
     if [ "$kind" = "review" ]; then
         if [ -z "${GIT_PARALLEL_WORKTREES_BASE:-}" ]; then
             echo "エラー: GIT_PARALLEL_WORKTREES_BASE が未設定です (pwt-base.zsh が読み込まれていない可能性)" >&2
+            cd "$_orig_dir" 2>/dev/null || true
             return 1
         fi
         local _prev_base="$GIT_PARALLEL_WORKTREES_BASE"
         local _review_base="$_prev_base/review"
-        mkdir -p "$_review_base" || { echo "エラー: $_review_base の作成に失敗しました" >&2; return 1; }
+        mkdir -p "$_review_base" || { echo "エラー: $_review_base の作成に失敗しました" >&2; cd "$_orig_dir" 2>/dev/null || true; return 1; }
         export GIT_PARALLEL_WORKTREES_BASE="$_review_base"
-        pwt switch -c "$branch"
-        local _rc=$?
-        if [ "$_rc" -ne 0 ]; then
+        if ! pwt switch -c "$branch"; then
             export GIT_PARALLEL_WORKTREES_BASE="$_prev_base"
+            cd "$_orig_dir" 2>/dev/null || true
+            return 1
         fi
-        return $_rc
+        return 0
     fi
 
-    pwt switch -c "$branch"
+    if ! pwt switch -c "$branch"; then
+        cd "$_orig_dir" 2>/dev/null || true
+        return 1
+    fi
 }
 
 # ZLE widget: キーバインドから呼び出す用
@@ -284,9 +316,22 @@ fragment prFields on PullRequest {
 # vcs_info を明示的に再実行するのは、ZLE widget 内での cd 後に
 # reset-prompt だけだと precmd が走らず vcs_info_msg_0_ が古い値のままになるため
 _pr-switch-widget() {
-    pr-switch
+    # stderr をキャプチャして zle -M で表示する
+    # fzf は /dev/tty 直接アクセスなのでキャプチャ対象外
+    # "PR 一覧を取得中..." は /dev/tty 書き込みなのでキャプチャ対象外
+    local _tmpfile
+    _tmpfile=$(mktemp)
+    pr-switch 2>"$_tmpfile"
+    local _rc=$?
+    local _errs
+    _errs=$(<"$_tmpfile")
+    rm -f "$_tmpfile"
     vcs_info
     zle reset-prompt
+    if [ "$_rc" -ne 0 ] && [ -n "$_errs" ]; then
+        zle -M "$_errs"
+    fi
+    return $_rc
 }
 zle -N _pr-switch-widget
 bindkey '^p' _pr-switch-widget
