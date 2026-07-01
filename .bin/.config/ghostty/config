@@ -10,6 +10,5 @@ background = #000000
 foreground = #e0e0e0
 cursor-color = #ffffff
 
-# 透過・ブラー
-background-opacity = 0.85
-background-blur-radius = 20
+# 透過
+background-opacity = 0.70
