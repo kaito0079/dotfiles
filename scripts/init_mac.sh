@@ -57,12 +57,17 @@ defaults write com.apple.dock wvous-br-modifier -int 0
 # ステータスバーを表示
 defaults write com.apple.finder ShowStatusBar -bool true
 ## パスバーを表示
-defaults write com.apple.finder ShowPathBar -bool true
+defaults write com.apple.finder ShowPathbar -bool true
 # タブバーを表示
 defaults write com.apple.finder ShowTabView -bool true
 
-# 不可視ファイルを表示
-defaults write com.appple.finder AppleShowAllFiles true
+# 不可視ファイルを常に表示
+defaults write com.apple.finder AppleShowAllFiles -bool true
+# 拡張子を常に表示
+defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+
+# Finder を再起動して設定を反映
+killall Finder
 
 # キー長押し時の特殊文字ポップアップを無効にし、キーリピートを有効にする
 defaults write -g ApplePressAndHoldEnabled -bool false
