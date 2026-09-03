@@ -1,6 +1,10 @@
 # MacOS
 .DS_Store
 
+# Python bytecode (hooks/ 配下で生成される)
+__pycache__/
+*.pyc
+
 # Local setteing
 *.local
 *.local/
