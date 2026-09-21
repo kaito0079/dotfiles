@@ -6,10 +6,10 @@
 
 | ~/.claude/ 内のパス | 実体 | 管理リポジトリ |
 | --- | --- | --- |
-| `settings.json` | `.bin/.claude/settings.json` | dotfiles (このリポ) |
-| `hooks/` | `.bin/.claude/hooks/` | dotfiles (このリポ) |
-| `CLAUDE.md` | `.bin/.claude/CLAUDE.md` | dotfiles (このリポ) |
-| `keybindings.json` | `.bin/.claude/keybindings.json` | dotfiles (このリポ) |
+| `settings.json` | `claude/.claude/settings.json` | dotfiles (このリポ) |
+| `hooks/` | `claude/.claude/hooks/` | dotfiles (このリポ) |
+| `CLAUDE.md` | `claude/.claude/CLAUDE.md` | dotfiles (このリポ) |
+| `keybindings.json` | `claude/.claude/keybindings.json` | dotfiles (このリポ) |
 | `statusline.sh` | `claude-tools/status-line.sh` | [kaito0079/claude-tools](https://github.com/kaito0079/claude-tools) (submodule) |
 | `skills/`, `agents/` | `claude-tools/{skills,agents}/*` | kaito0079/claude-tools (submodule) |
 
