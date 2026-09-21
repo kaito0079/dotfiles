@@ -31,6 +31,20 @@ PROMPT='
 %K{117}%F{black} %~ %k%f%K{75}%F{black}$vcs_info_msg_0_ %k%f
 %F{red}❯%f '
 
+# 履歴
+# 既定は SAVEHIST=1000 で数日分しか残らず、過去の使い方を引けなかったため拡大する。
+HISTFILE=~/.zsh_history
+HISTSIZE=10000             # メモリ上に保持する件数
+SAVEHIST=10000             # HISTFILE に保存する件数
+setopt EXTENDED_HISTORY    # 実行日時も記録する (いつ使ったかを引けるようにする)
+setopt INC_APPEND_HISTORY  # シェル終了時ではなく実行の都度追記する
+setopt HIST_REDUCE_BLANKS  # 余分な空白を詰めて記録する
+setopt HIST_IGNORE_ALL_DUPS  # 同じコマンドは古い方を削除し、一意な履歴にする
+setopt HIST_SAVE_NO_DUPS     # HISTFILE にも重複を書き込まない
+# SHARE_HISTORY は入れない。複数ワークスペースを並行して使うため、他タブの
+# コマンドが矢印キーに混ざると追いにくい。INC_APPEND_HISTORY だけで
+# HISTFILE には全タブ分が溜まるので、横断検索には支障がない。
+
 # Load aliases
 source ~/dotfiles/zsh/aliases.zsh
 
