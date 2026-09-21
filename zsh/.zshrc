@@ -58,8 +58,12 @@ export PATH="/opt/homebrew/bin:$PATH"
 # Claude Codeのインストールで追加
 export PATH="$HOME/.local/bin:$PATH"
 
-# worktree用の自作ツールの登録
-source "${XDG_DATA_HOME:-$HOME/.local/share}/pwt/pwt.sh"
+# pwt (worktree 管理) のシェル統合。pwt 本体は Homebrew で入れる想定で、
+# formula が pkgshare に置く pwt.sh を読む。未導入の環境ではシェル起動時に
+# エラーを出さず黙って飛ばす (pwt 無しでも他の設定は使えるため)。
+_pwt_sh="${HOMEBREW_PREFIX:-/opt/homebrew}/opt/pwt/share/pwt/pwt.sh"
+[ -r "$_pwt_sh" ] && source "$_pwt_sh"
+unset _pwt_sh
 
 # pwt の worktree 配置先を <ghq_root>/.worktrees/<host>/<owner>/<repo>/ に動的セット
 source ~/.config/zsh/pwt-base.zsh
