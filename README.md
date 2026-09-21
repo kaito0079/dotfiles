@@ -42,15 +42,24 @@ make update
 
 ## ディレクトリ構成
 
-- `scripts/`: セットアップ用のシェルスクリプト（`make` から呼ばれる）
-- `.bin/`: `$HOME` に配置する設定一式
-  - **ドットで始まるエントリ**は `link.sh` が `$HOME` 配下へ symlink する。
-    `$HOME` の構造をそのまま写す形（`.zshrc` → `~/.zshrc`、`.config/cmux` → `~/.config/cmux`）
-  - **ドットで始まらないエントリ**（`aliases.zsh`、`mac.zsh`）はリンクされず、
-    `.zshrc` から `source ~/dotfiles/.bin/...` とパス指定で読み込む
-  - `.config/raycast-scripts` のような macOS 専用のものは、対象外 OS ではリンクされない
+ツール 1 つにつき 1 ディレクトリ（パッケージ）で管理する。パッケージの中は
+`$HOME` からの相対パスをそのまま再現しているので、リポジトリを見ればどのツールの
+設定がどこに配置されるか分かる。
+
+```
+zsh/.zshrc                    →  ~/.zshrc
+git/.gitconfig                →  ~/.gitconfig
+cmux/.config/cmux/cmux.json   →  ~/.config/cmux/cmux.json
+claude/.claude/settings.json  →  ~/.claude/settings.json
+```
+
+- **パッケージ**: `zsh` `git` `claude` `cmux` `ghostty` `nvim` `tmux` `vim` `raycast` `homebrew`
+  - `setup/link.sh` がパッケージ直下のドットエントリを `$HOME` へ symlink する
+  - ドットで始まらないファイル（`zsh/aliases.zsh`、`zsh/mac.zsh`）はリンクされず、
+    `.zshrc` から `source ~/dotfiles/zsh/...` とパス指定で読み込む
+  - `.darwin-only` を置いたパッケージ（`raycast` `cmux` `homebrew`）は macOS 以外ではリンクされない
+- `setup/`: セットアップ用のシェルスクリプト（`make` から呼ばれる）
 - `claude-tools/`: Claude Code のスキル / エージェント / ステータスライン（submodule）
-- `Brewfile`: Homebrewでインストールするアプリケーションの一覧
 
 ## 参考資料
 

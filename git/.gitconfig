@@ -39,6 +39,6 @@
 	defaultBranch = main
 
 # 個人情報やマシン固有のパスは ~/.gitconfig.local に書く
-# テンプレート: .bin/.gitconfig.local.example
+# テンプレート: git/.gitconfig.local.example
 [include]
 	path = ~/.gitconfig.local

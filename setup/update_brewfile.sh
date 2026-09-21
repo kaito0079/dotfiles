@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BREWFILE_PATH="$(cd "$(dirname "$0")/../" && pwd)"/.bin/.Brewfile
+BREWFILE_PATH="$(cd "$(dirname "$0")/../" && pwd)"/homebrew/.Brewfile
 
 function update_brewfile() {
   # 現在インストールされているパッケージ一覧を取得

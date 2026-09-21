@@ -32,10 +32,10 @@ PROMPT='
 %F{red}❯%f '
 
 # Load aliases
-source ~/dotfiles/.bin/aliases.zsh
+source ~/dotfiles/zsh/aliases.zsh
 
 if [ "$(uname)" = "Darwin" ] ; then
-    source ~/dotfiles/.bin/mac.zsh
+    source ~/dotfiles/zsh/mac.zsh
 fi
 
 # vim を Homebrew 版へ変更

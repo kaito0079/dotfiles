@@ -2,38 +2,55 @@
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../" && pwd)"
 
-for dotfile in "${SCRIPT_DIR}"/.bin/.??* ; do
-    [[ "$dotfile" == "${SCRIPT_DIR}/.git" ]] && continue
-    [[ "$dotfile" == "${SCRIPT_DIR}/.github" ]] && continue
-    [[ "$dotfile" == "${SCRIPT_DIR}/.DS_Store" ]] && continue
-    [[ "$dotfile" == *".example" ]] && continue  # テンプレートファイルは除外
+# リポジトリ直下のディレクトリ 1 つが「パッケージ」= 1 ツール分の設定。
+# パッケージの中は $HOME からの相対パスをそのまま再現しているので、
+# 直下のドットエントリを $HOME に symlink すれば元の構造が復元される。
+# (例: cmux/.config/cmux/ -> ~/.config/cmux/)
+for package in "${SCRIPT_DIR}"/*/ ; do
+    package="${package%/}"
+    package_name="$(basename "$package")"
 
-    if [ -d "$dotfile" ] && [ ! -L "$dotfile" ]; then
-        # ディレクトリは親を作成し、直下の各項目をディレクトリごとリンク
-        dest_dir="${HOME}/$(basename "$dotfile")"
-        mkdir -p "$dest_dir"
-        for item in "$dotfile"/* "$dotfile"/.??* ; do
-            [ -e "$item" ] || continue
-            [[ "$(basename "$item")" == ".DS_Store" ]] && continue
-            # Raycast は macOS 専用。対象外 OS ではリンクしない
-            # (link.sh 自体は OS 非依存の設定も扱うのでスクリプト全体は止めない)
-            if [[ "$(basename "$item")" == "raycast-scripts" ]] && [ "$(uname)" != "Darwin" ]; then
-                continue
-            fi
-            ln -fnsv "$item" "$dest_dir"
-        done
-    else
-        # ファイルはそのままリンク
-        ln -fnsv "$dotfile" "$HOME"
+    # setup/ はこのスクリプト自身、claude-tools/ は submodule (下部で個別に扱う)
+    case "$package_name" in
+        setup|claude-tools) continue ;;
+    esac
+
+    # macOS 専用のパッケージには .darwin-only を置いておく
+    # (Raycast や cask 前提の Brewfile など)
+    if [ -e "${package}/.darwin-only" ] && [ "$(uname)" != "Darwin" ]; then
+        echo "macOS 以外のためスキップします: ${package_name}"
+        continue
     fi
+
+    for dotfile in "$package"/.??* ; do
+        [ -e "$dotfile" ] || continue
+        case "$(basename "$dotfile")" in
+            .DS_Store|.darwin-only) continue ;;
+        esac
+        [[ "$dotfile" == *".example" ]] && continue  # テンプレートファイルは除外
+
+        if [ -d "$dotfile" ] && [ ! -L "$dotfile" ]; then
+            # ディレクトリは親を作成し、直下の各項目をディレクトリごとリンク
+            dest_dir="${HOME}/$(basename "$dotfile")"
+            mkdir -p "$dest_dir"
+            for item in "$dotfile"/* "$dotfile"/.??* ; do
+                [ -e "$item" ] || continue
+                [[ "$(basename "$item")" == ".DS_Store" ]] && continue
+                ln -fnsv "$item" "$dest_dir"
+            done
+        else
+            # ファイルはそのままリンク
+            ln -fnsv "$dotfile" "$HOME"
+        fi
+    done
 done
 
-# .gitconfig_privateが存在しない場合、テンプレートからコピーを促す
-if [ ! -f "$HOME/.gitconfig.local" ] && [ -f "${SCRIPT_DIR}/.bin/.gitconfig.local.example" ]; then
+# .gitconfig.localが存在しない場合、テンプレートからコピーを促す
+if [ ! -f "$HOME/.gitconfig.local" ] && [ -f "${SCRIPT_DIR}/git/.gitconfig.local.example" ]; then
     echo ""
     echo "⚠️  ~/.gitconfig.local が存在しません"
     echo "以下のコマンドでテンプレートからコピーし、編集してください:"
-    echo "  cp ${SCRIPT_DIR}/.bin/.gitconfig.local.example ~/.gitconfig.local"
+    echo "  cp ${SCRIPT_DIR}/git/.gitconfig.local.example ~/.gitconfig.local"
     echo ""
 fi
 
