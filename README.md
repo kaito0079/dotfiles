@@ -42,8 +42,14 @@ make update
 
 ## ディレクトリ構成
 
-- `scripts/`: セットアップ用のシェルスクリプト
-- `.bin/`: カスタムコマンドやユーティリティ
+- `scripts/`: セットアップ用のシェルスクリプト（`make` から呼ばれる）
+- `.bin/`: `$HOME` に配置する設定一式
+  - **ドットで始まるエントリ**は `link.sh` が `$HOME` 配下へ symlink する。
+    `$HOME` の構造をそのまま写す形（`.zshrc` → `~/.zshrc`、`.config/cmux` → `~/.config/cmux`）
+  - **ドットで始まらないエントリ**（`aliases.zsh`、`mac.zsh`）はリンクされず、
+    `.zshrc` から `source ~/dotfiles/.bin/...` とパス指定で読み込む
+  - `.config/raycast-scripts` のような macOS 専用のものは、対象外 OS ではリンクされない
+- `claude-tools/`: Claude Code のスキル / エージェント / ステータスライン（submodule）
 - `Brewfile`: Homebrewでインストールするアプリケーションの一覧
 
 ## 参考資料

@@ -15,6 +15,11 @@ for dotfile in "${SCRIPT_DIR}"/.bin/.??* ; do
         for item in "$dotfile"/* "$dotfile"/.??* ; do
             [ -e "$item" ] || continue
             [[ "$(basename "$item")" == ".DS_Store" ]] && continue
+            # Raycast は macOS 専用。対象外 OS ではリンクしない
+            # (link.sh 自体は OS 非依存の設定も扱うのでスクリプト全体は止めない)
+            if [[ "$(basename "$item")" == "raycast-scripts" ]] && [ "$(uname)" != "Darwin" ]; then
+                continue
+            fi
             ln -fnsv "$item" "$dest_dir"
         done
     else
