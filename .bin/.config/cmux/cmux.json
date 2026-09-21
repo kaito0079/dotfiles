@@ -53,6 +53,14 @@
     "openMarkdownInCmuxViewer": true
   },
 
+  // 埋め込みブラウザは cmux diff の差分ビューアのために有効にしているが、
+  // ターミナルに出た URL は従来どおり外部ブラウザで開きたいので横取りを切る。
+  // (既定はどちらも true)
+  "browser": {
+    "interceptTerminalOpenCommandInCmuxBrowser": false,
+    "openTerminalLinksInCmuxBrowser": false
+  },
+
   "sidebar": {
     "showBranchDirectory": false,
     "showPorts": false
