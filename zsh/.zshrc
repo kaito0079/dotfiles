@@ -1,9 +1,6 @@
 # 補完機能を有効にする
 autoload -Uz compinit
 compinit -u
-if [ -e /opt/homebrew/bin/zsh/zsh-completions ]; then
-    fpath=(/opt/homebrew/bin/zsh/zsh-completions $fpath)
-fi
 
 # 補完機能で小文字でも大文字にマッチさせる
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
