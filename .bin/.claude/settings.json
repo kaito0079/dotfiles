@@ -1,8 +1,4 @@
 {
-  "sandbox": {
-      "excludedCommands": ["task *", "docker *", "docker-compose *"],
-      "allowUnsandboxedCommands": true
-  },
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
@@ -54,14 +50,109 @@
       "Bash(docker ps*)"
     ],
     "additionalDirectories": [
-        "~/work/.worktrees"
+      "~/work/.worktrees"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/cmux_todo_progress.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/cmux_claude_status_pill.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/cmux_claude_status_pill.py"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/cmux_claude_status_pill.py"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/cmux_claude_status_pill.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/session_end_transcript_mirror.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/cmux_todo_progress.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/cmux_claude_status_pill.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/sdd_open_in_cmux.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "TodoWrite",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/cmux_todo_progress.py"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
     "type": "command",
-    "command": "cat | bash ~/.claude/statusline.sh"
+    "command": "cat | bash ~/.claude/hooks/statusline_entry.sh",
+    "refreshInterval": 60
   },
   "enabledPlugins": {},
+  "sandbox": {
+    "allowUnsandboxedCommands": true,
+    "excludedCommands": [
+      "task *",
+      "docker *",
+      "docker-compose *"
+    ]
+  },
   "effortLevel": "xhigh",
+  "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
   "teammateMode": "tmux"
 }
