@@ -20,5 +20,5 @@ esac
 
 [ -f "$file_path" ] || exit 0
 
-cmux_bin="${CMUX_BUNDLED_CLI_PATH:-cmux}"
-"$cmux_bin" markdown open "$file_path" --focus false >/dev/null 2>&1 || true
+# 右のプレビューペインにタブとして積む (ペインの解決と重複回避はヘルパー側)
+python3 "$(dirname "$0")/cmux_preview.py" markdown "$file_path" >/dev/null 2>&1 || true
