@@ -136,13 +136,26 @@ def read_tree(workspace: str) -> tuple[list[Pane], Pane | None, Pane | None]:
     return panes, session, preview
 
 
-def restore_focus(pane: Pane | None) -> None:
+def selected_workspace() -> str | None:
+    """ウィンドウが現在選択しているワークスペースの UUID を返す。"""
+    out = run("list-windows")
+    if not out:
+        return None
+    m = re.search(r"selected_workspace=([0-9A-Fa-f-]{36})", out)
+    return m.group(1) if m else None
+
+
+def restore_focus(pane: Pane | None, was_selected: bool) -> None:
     """操作前にフォーカスされていたペインへ戻す。
 
     ユーザーが意図してプレビュー側を見ている場合にフォーカスを奪わないよう、
     セッション側へ固定せず「元々フォーカスされていたペイン」に戻す。
+
+    ただし cmux の focus-pane はワークスペースごと切り替える。裏で動いている
+    セッションがこれを呼ぶと、ユーザーが見ている画面を奪ってしまうため、
+    自分のワークスペースが選択中のときだけフォーカスを触る。
     """
-    if pane is None:
+    if pane is None or not was_selected:
         return
     # ペインを新規作成した直後は cmux 側が遅れて新サーフェスへフォーカスを
     # 当て直すため、少し待ってから戻す。
@@ -158,6 +171,7 @@ def cmd_markdown(path: str) -> int:
 
     path = os.path.abspath(path)
     name = os.path.basename(path)
+    was_selected = selected_workspace() == workspace
     panes, _, preview = read_tree(workspace)
     focused = next((p for p in panes if p.focused), None)
 
@@ -168,7 +182,7 @@ def cmd_markdown(path: str) -> int:
                 "--direction", "right", "--focus", "false")
         else:
             run("markdown", "open", path, "--direction", "right", "--focus", "false")
-        restore_focus(focused)
+        restore_focus(focused, was_selected)
         return 0
 
     # 同じファイルのタブが既にあれば何もしない。markdown ビューアはファイルを
@@ -177,7 +191,7 @@ def cmd_markdown(path: str) -> int:
         return 0
 
     run("open", path, "--pane", preview.uuid, "--no-focus")
-    restore_focus(focused)
+    restore_focus(focused, was_selected)
     return 0
 
 
@@ -216,6 +230,7 @@ def cmd_diff(extra: list[str]) -> int:
         return 0
 
     patch = build_patch()
+    was_selected = selected_workspace() == workspace
     panes, _, preview = read_tree(workspace)
     focused = next((p for p in panes if p.focused), None)
     # 既存の差分タブを控えておく。新しい方を開いてから閉じることで、
@@ -228,7 +243,7 @@ def cmd_diff(extra: list[str]) -> int:
         for uuid in stale:
             run("close-surface", "--surface", uuid)
         if stale:
-            restore_focus(focused)
+            restore_focus(focused, was_selected)
         return 0
 
     out = run_stdin(patch, "diff", "-", *extra, "--no-focus")
@@ -250,7 +265,7 @@ def cmd_diff(extra: list[str]) -> int:
     for uuid in stale:
         run("close-surface", "--surface", uuid)
 
-    restore_focus(focused)
+    restore_focus(focused, was_selected)
     return 0
 
 
