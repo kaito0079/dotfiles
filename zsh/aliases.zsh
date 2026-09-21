@@ -21,14 +21,14 @@ alias gsw='git switch'
 alias gswc='git switch -c'
 alias gswm='git switch main'
 alias gl='git log --oneline --graph --decorate'
-
-# pwt (Parallel Worktrees) 関連のエイリアス
-alias pws='pwt switch'
-alias pwsm='pwt switch 0'
 alias grs='git reset'
 alias grh='git reset --hard'
 alias gst='git stash'
 alias gstp='git stash pop'
+
+# pwt (Parallel Worktrees) 関連のエイリアス
+alias pws='pwt switch'
+alias pwsm='pwt switch 0'
 
 # Docker関連のエイリアス
 alias d='docker'

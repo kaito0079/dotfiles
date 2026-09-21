@@ -1,6 +1,10 @@
 # tmuxstart.zsh
 # tmux コマンドをラップし、セッション名を自動決定してアタッチ/作成する
 #
+# 使い方:
+#   tmux             セッション名を自動決定してアタッチ/作成 (引数なしのとき)
+#   tmux <args>      引数があれば素の tmux をそのまま実行
+#
 # セッション名の決定優先度:
 #   1. .tmuxstart ファイル (カレント → git root) の 1 行目
 #   2. git repository のルート名 (basename)
