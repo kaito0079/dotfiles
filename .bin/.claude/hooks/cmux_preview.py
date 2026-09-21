@@ -216,15 +216,20 @@ def cmd_diff(extra: list[str]) -> int:
         return 0
 
     patch = build_patch()
-    if not patch.strip():
-        # 変更が無いターンではタブを触らない (空のビューアを開かない)
-        return 0
-
     panes, _, preview = read_tree(workspace)
     focused = next((p for p in panes if p.focused), None)
-    # 先に既存の差分タブを控えておく。新しい方を開いてから閉じることで、
+    # 既存の差分タブを控えておく。新しい方を開いてから閉じることで、
     # プレビューペインが一瞬空になって畳まれるのを避ける。
     stale = [s.uuid for p in panes for s in p.surfaces if s.is_diff]
+
+    if not patch.strip():
+        # 未コミットの変更が無いなら差分タブも残さない。残すとコミット前の
+        # 内容を表示したままになり、実態と食い違うため。
+        for uuid in stale:
+            run("close-surface", "--surface", uuid)
+        if stale:
+            restore_focus(focused)
+        return 0
 
     out = run_stdin(patch, "diff", "-", *extra, "--no-focus")
     if out is None:
