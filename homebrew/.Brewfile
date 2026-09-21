@@ -1,5 +1,6 @@
 tap "go-task/tap"
 tap "homebrew/bundle"
+tap "kaito0079/tap"
 tap "supabase/tap"
 # Official Amazon AWS command-line interface
 brew "awscli"
@@ -47,6 +48,8 @@ brew "watchman"
 brew "zsh"
 # Fish-like fast/unobtrusive autosuggestions for zsh
 brew "zsh-autosuggestions"
+# Thin wrapper around git worktree with shared-asset syncing
+brew "kaito0079/tap/pwt"
 # Supabase CLI
 brew "supabase/tap/supabase"
 # Enable Windows-like alt-tab
