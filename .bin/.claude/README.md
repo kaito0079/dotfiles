@@ -10,11 +10,39 @@
 | `hooks/` | `.bin/.claude/hooks/` | dotfiles (このリポ) |
 | `CLAUDE.md` | `.bin/.claude/CLAUDE.md` | dotfiles (このリポ) |
 | `keybindings.json` | `.bin/.claude/keybindings.json` | dotfiles (このリポ) |
-| `statusline.sh` | `claude-tools/status-line.sh` | [kaito0079/claude-tools](https://github.com/kaito0079/claude-tools) |
-| `skills/`, `agents/` | `claude-tools/{skills,agents}/*` | kaito0079/claude-tools |
+| `statusline.sh` | `claude-tools/status-line.sh` | [kaito0079/claude-tools](https://github.com/kaito0079/claude-tools) (submodule) |
+| `skills/`, `agents/` | `claude-tools/{skills,agents}/*` | kaito0079/claude-tools (submodule) |
 
 symlink はディレクトリ単位 (`hooks/` ごとリンク) なので、`hooks/` にファイルを
 追加すると再リンク不要で即 `~/.claude/hooks/` に現れる。
+
+## claude-tools (submodule)
+
+スキル / エージェント / ユーティリティスクリプト / ステータスラインは、リポジトリ
+ルートの `claude-tools/` に submodule として置いている。公開可能な資産とマシン
+固有の配線 (`settings.json`・hook 本体) を分けるため。`scripts/link.sh` が
+`~/.claude/{skills,agents}/`・`~/.local/bin/`・`~/.claude/statusline.sh` へ
+symlink を張る。
+
+```bash
+# 新しいマシン: submodule ごと取得
+git clone --recursive git@github.com:kaito0079/dotfiles.git ~/dotfiles
+
+# --recursive を忘れた場合 (make link が未取得を検知して自動実行もする)
+git submodule update --init claude-tools
+
+# claude-tools の最新を取り込む (取り込み後、ポインタ更新を dotfiles に commit する)
+git submodule update --remote claude-tools
+```
+
+claude-tools 側を編集したときは、**submodule 内で commit & push してから**
+dotfiles 側でポインタ更新を commit する。順序が逆だと、push されていない
+コミットを指した状態で dotfiles が push されてしまう。これを防ぐため、
+clone 直後に以下を設定しておく (リポジトリローカル設定なのでマシンごとに必要):
+
+```bash
+git config push.recurseSubmodules on-demand
+```
 
 ## フック一覧
 
