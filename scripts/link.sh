@@ -32,9 +32,18 @@ if [ ! -f "$HOME/.gitconfig.local" ] && [ -f "${SCRIPT_DIR}/.bin/.gitconfig.loca
     echo ""
 fi
 
-# claude-tools リポを clone してあれば、その公開資産を本マシンに symlink する。
+# claude-tools (submodule) の公開資産を本マシンに symlink する。
 # (skills/agents/scripts は他人にも勧められる shareable artifact として claude-tools 側に置く)
-CLAUDE_TOOLS="${CLAUDE_TOOLS_DIR:-$HOME/work/github.com/kaito0079/claude-tools}"
+# 別の場所に clone したものを使いたい場合は CLAUDE_TOOLS_DIR で上書きする。
+CLAUDE_TOOLS="${CLAUDE_TOOLS_DIR:-${SCRIPT_DIR}/claude-tools}"
+
+# --recursive なしで clone した場合、submodule が空ディレクトリのままになり
+# 以降のループが黙って空振りするため、未取得ならここで取得する。
+if [ -z "${CLAUDE_TOOLS_DIR:-}" ] && [ ! -d "$CLAUDE_TOOLS/skills" ]; then
+    echo "claude-tools submodule を取得します..."
+    git -C "$SCRIPT_DIR" submodule update --init claude-tools
+fi
+
 if [ -d "$CLAUDE_TOOLS" ]; then
     # skills/ と agents/ を ~/.claude/ にぶら下げる
     for sub in skills agents; do

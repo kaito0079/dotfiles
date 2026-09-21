@@ -1,0 +1,4 @@
+[submodule "claude-tools"]
+	path = claude-tools
+	url = git@github.com:kaito0079/claude-tools.git
+	branch = main
