@@ -2,6 +2,42 @@
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../" && pwd)"
 
+created=0
+updated=0
+unchanged=0
+backed_up=0
+
+# $1 の実体を $2 のパスに symlink する。
+# - 既に同じリンクなら何もしない (毎回 25 行出力されると差分が埋もれるため)
+# - 別のリンクなら張り替える
+# - 実ファイル / 実ディレクトリがある場合は破壊せず退避する。
+#   新しいマシンでは OS やインストーラが用意した ~/.zshrc などが既に存在する。
+link_one() {
+    local src="$1" dest="$2" backup
+
+    if [ -L "$dest" ]; then
+        if [ "$(readlink "$dest")" = "$src" ]; then
+            unchanged=$((unchanged + 1))
+            return
+        fi
+        ln -fns "$src" "$dest"
+        updated=$((updated + 1))
+        echo "  更新  ~${dest#"$HOME"}"
+        return
+    fi
+
+    if [ -e "$dest" ]; then
+        backup="${dest}.bak.$(date +%Y%m%d%H%M%S)"
+        mv "$dest" "$backup"
+        backed_up=$((backed_up + 1))
+        echo "  退避  ~${dest#"$HOME"} -> ~${backup#"$HOME"}"
+    fi
+
+    ln -fns "$src" "$dest"
+    created=$((created + 1))
+    echo "  作成  ~${dest#"$HOME"}"
+}
+
 # リポジトリ直下のディレクトリ 1 つが「パッケージ」= 1 ツール分の設定。
 # パッケージの中は $HOME からの相対パスをそのまま再現しているので、
 # 直下のドットエントリを $HOME に symlink すれば元の構造が復元される。
@@ -36,23 +72,14 @@ for package in "${SCRIPT_DIR}"/*/ ; do
             for item in "$dotfile"/* "$dotfile"/.??* ; do
                 [ -e "$item" ] || continue
                 [[ "$(basename "$item")" == ".DS_Store" ]] && continue
-                ln -fnsv "$item" "$dest_dir"
+                link_one "$item" "${dest_dir}/$(basename "$item")"
             done
         else
             # ファイルはそのままリンク
-            ln -fnsv "$dotfile" "$HOME"
+            link_one "$dotfile" "${HOME}/$(basename "$dotfile")"
         fi
     done
 done
-
-# .gitconfig.localが存在しない場合、テンプレートからコピーを促す
-if [ ! -f "$HOME/.gitconfig.local" ] && [ -f "${SCRIPT_DIR}/git/.gitconfig.local.example" ]; then
-    echo ""
-    echo "⚠️  ~/.gitconfig.local が存在しません"
-    echo "以下のコマンドでテンプレートからコピーし、編集してください:"
-    echo "  cp ${SCRIPT_DIR}/git/.gitconfig.local.example ~/.gitconfig.local"
-    echo ""
-fi
 
 # claude-tools (submodule) の公開資産を本マシンに symlink する。
 # (skills/agents/scripts は他人にも勧められる shareable artifact として claude-tools 側に置く)
@@ -73,7 +100,7 @@ if [ -d "$CLAUDE_TOOLS" ]; then
         mkdir -p "$HOME/.claude/$sub"
         for item in "$CLAUDE_TOOLS/$sub"/*; do
             [ -e "$item" ] || continue
-            ln -fnsv "$item" "$HOME/.claude/$sub"
+            link_one "$item" "$HOME/.claude/$sub/$(basename "$item")"
         done
     done
 
@@ -85,12 +112,26 @@ if [ -d "$CLAUDE_TOOLS" ]; then
             [ -x "$script_file" ] || continue
             cmd_name="$(basename "$script_file")"
             case "$cmd_name" in README*|*.md) continue ;; esac
-            ln -fnsv "$script_file" "$HOME/.local/bin/${cmd_name%.*}"
+            link_one "$script_file" "$HOME/.local/bin/${cmd_name%.*}"
         done
     fi
 
     # status-line.sh を ~/.claude/statusline.sh に配置 (settings.json から参照)
     if [ -f "$CLAUDE_TOOLS/status-line.sh" ]; then
-        ln -fnsv "$CLAUDE_TOOLS/status-line.sh" "$HOME/.claude/statusline.sh"
+        link_one "$CLAUDE_TOOLS/status-line.sh" "$HOME/.claude/statusline.sh"
     fi
+fi
+
+# .gitconfig.localが存在しない場合、テンプレートからコピーを促す
+if [ ! -f "$HOME/.gitconfig.local" ] && [ -f "${SCRIPT_DIR}/git/.gitconfig.local.example" ]; then
+    echo ""
+    echo "⚠️  ~/.gitconfig.local が存在しません"
+    echo "以下のコマンドでテンプレートからコピーし、編集してください:"
+    echo "  cp ${SCRIPT_DIR}/git/.gitconfig.local.example ~/.gitconfig.local"
+    echo ""
+fi
+
+echo "作成 ${created} / 更新 ${updated} / 変更なし ${unchanged} / 退避 ${backed_up}"
+if [ "$backed_up" -gt 0 ]; then
+    echo "⚠️  既存のファイルを .bak.<日時> に退避しました。不要なら削除してください。"
 fi
