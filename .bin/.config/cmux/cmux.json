@@ -49,6 +49,10 @@
   //     "showSSH" : true
   //   },
 
+  "app": {
+    "openMarkdownInCmuxViewer": true
+  },
+
   "sidebar": {
     "showBranchDirectory": false,
     "showPorts": false
