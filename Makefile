@@ -18,6 +18,7 @@ help:
 	@echo "  \033[0;32mmake\033[0m または \033[0;32mmake all\033[0m     - すべてのセットアップを実行"
 	@echo "  \033[0;32mmake init\033[0m        - macOSの初期設定を実行"
 	@echo "  \033[0;32mmake link\033[0m       - ドットファイルのシンボリックリンクを作成"
+	@echo "  \033[0;32mmake unlink\033[0m     - 作成したシンボリックリンクを解除"
 	@echo "  \033[0;32mmake brew\033[0m       - Homebrewでパッケージをインストール"
 	@echo "  \033[0;32mmake update\033[0m     - スクリプトの実行権限を付与し、Brewfileを更新"
 	@echo "  \033[0;32mmake help\033[0m       - このヘルプを表示"
@@ -43,6 +44,12 @@ link:
 	@echo "\033[0;34m[リンク作成] ドットファイルのシンボリックリンクを作成します...\033[0m"
 	@setup/link.sh
 	@echo "\033[0;32m[リンク作成] 完了しました。\033[0m"
+
+# link で作成したシンボリックリンクを解除
+# - リポジトリを指す symlink のみが対象。実ファイルやリンク先の実体には触れない
+# - 削除対象を一覧表示し、確認を求める (make unlink ARGS=-y で省略)
+unlink:
+	@setup/unlink.sh $(ARGS)
 
 
 # Homebrewを使用してBrewfileに記載されているパッケージをインストール
