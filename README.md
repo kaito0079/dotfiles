@@ -61,6 +61,8 @@ claude/.claude/settings.json  →  ~/.claude/settings.json
   - リンク先に**実ファイルがある場合は `.bak.<日時>` に退避**してから張る。新しいマシンで
     OS やインストーラが用意した `~/.zshrc` などを失わないため。`make link` は末尾に
     `作成 / 更新 / 変更なし / 退避` の件数を出すので、意図しない変化に気づける
+  - `make unlink` で解除できる。対象はリポジトリを指す symlink のみで、実ファイルや
+    リンク先の実体には触れない
 - `setup/`: セットアップ用のシェルスクリプト（`make` から呼ばれる）
 - `claude-tools/`: Claude Code のスキル / エージェント / ステータスライン（submodule）
 
