@@ -54,10 +54,46 @@ exit 0 し、失敗しても Claude Code の動作を絶対にブロックしな
 | --- | --- | --- | --- |
 | `cmux_claude_status_pill.py` | SessionStart / UserPromptSubmit / Notification / Stop / SessionEnd | cmux サイドバーの `claude_code` ステータスピル (Running / Needs input) を devcontainer 内で再現する。ホストでは cmux の Claude ラッパーが同じピルを管理するため何もしない | `/.dockerenv` があり `$CMUX_WORKSPACE_ID` と `cmux` CLI がある |
 | `cmux_todo_progress.py` | SessionStart / Stop / PostToolUse(TodoWrite) | TodoWrite の完了率 (`done/total`) を cmux サイドバーのプログレスバーに表示。Stop / SessionStart でクリア | `$CMUX_WORKSPACE_ID` と `cmux` CLI がある |
-| `sdd_open_in_cmux.sh` | PostToolUse(Write) | SDD のフェーズドキュメント (`.docs/specs/**/*.md`) が Write されたら cmux の markdown viewer をバックグラウンドで開く | `$CMUX_WORKSPACE_ID` がある |
+| `sdd_open_in_cmux.sh` | PostToolUse(Write) | SDD のフェーズドキュメント (`.docs/specs/**/*.md`) が Write されたら `cmux_preview.py` 経由でプレビュータブを開く | `$CMUX_WORKSPACE_ID` がある |
+| `cmux_preview.py` | Stop (差分) / `sdd_open_in_cmux.sh` から呼び出し (markdown) | 右のプレビューペインにタブを積む (下記参照) | `$CMUX_WORKSPACE_ID` と `cmux` CLI がある。差分は git repo 内かつ `cmux enable-browser` 済み |
 | `session_end_transcript_mirror.py` | Stop | git worktree で作業中のセッションのトランスクリプトを main worktree の project dir (`~/.claude/projects/<encoded-path>/`) にミラーする。worktree 横断でセッション履歴を一覧できるようにするため | git repo 内かつ main worktree 以外 |
 | `cmux_workspace_name_sync.sh` | statusline 描画のたび (`statusline_entry.sh` 経由) | Claude セッション名を cmux ワークスペース名に同期する (下記参照) | `$CMUX_WORKSPACE_ID` と `cmux` CLI と `jq` がある |
 | `statusline_entry.sh` | `settings.json` の `statusLine` | statusline の入力 JSON を「表示 (claude-tools の statusline.sh)」と「cmux ワークスペース名同期」に分配するエントリポイント | — |
+
+## プレビューペイン (cmux_preview.py)
+
+左をセッション、右を生成物の確認用として 2 分割に保つ。markdown プレビューも
+差分ビューアも右ペインの**タブ**として積み、ペインが増えないようにする。
+
+背景: cmux の `markdown open` も `diff` も既定では split するコマンドなので、
+そのままフックに使うとペインが際限なく増える。`cmux open --pane <ref>` は
+「同じペインにタブとして開く」挙動なのでこちらを使い、`diff` が別ペインを
+作った場合は `move-surface` で右ペインへ寄せる。
+
+| サブコマンド | 挙動 |
+| --- | --- |
+| `cmux_preview.py markdown <path>` | 右ペインにプレビュータブを追加。同名タブが既にあれば何もしない (ビューアがファイルを監視していて中身は自動更新されるため、開き直すとタブが重複するだけ) |
+| `cmux_preview.py diff [cmux diff の引数]` | 未コミットの変更を差分ビューアで表示。古い差分タブは閉じて 1 枚に保つ。変更が無いターンではタブを触らない |
+
+実装上のポイント:
+
+- cmux の ref (`pane:16` など) はインデックスで、サーフェスの開閉のたびに
+  振り直される。そのためキャッシュせず毎回 `cmux tree` を読み直し、
+  `--id-format both` で得た UUID で対象を指定する。
+- 右ペインの判定は「セッション以外で、ターミナルを含まないペイン」。
+  ユーザーが手でタブを閉じても次回に作り直されるので自己修復する。
+- フォーカスは操作前にフォーカスされていたペインへ戻す。右ペインを見ている
+  最中に奪い返さないため。ペイン新規作成時は cmux が遅れてフォーカスを
+  当て直すので、少し待ってから戻す。
+- 差分は `git diff HEAD` を自前で組み立てて `cmux diff -` に標準入力で渡す。
+  `cmux diff --source last-turn` / `--unstaged` は手元で内容が描画されなかった
+  ため使っていない。未追跡ファイルは `git diff --no-index` で個別に足している
+  (新規作成されたファイルこそ確認したいため)。
+- 差分ビューアは cmux の埋め込みブラウザ上で動くため `cmux enable-browser`
+  が必要。これはアプリ側の状態で dotfiles には含まれないので、新しいマシンでは
+  別途実行する。ターミナルの URL が埋め込みブラウザに横取りされないよう、
+  `cmux.json` で `browser.interceptTerminalOpenCommandInCmuxBrowser` と
+  `browser.openTerminalLinksInCmuxBrowser` を `false` に固定している。
 
 ## cmux ワークスペース名同期の仕組み
 
