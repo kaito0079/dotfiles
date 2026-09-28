@@ -47,7 +47,14 @@
       "Bash(gh api repos/*/pulls/*/reviews*)",
       "Bash(gh api repos/*/issues/*/comments*)",
       "Bash(task --list*)",
-      "Bash(docker ps*)"
+      "Bash(docker ps*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:zenn.dev)",
+      "WebFetch(domain:docs.slack.dev)",
+      "WebFetch(domain:slack.com)",
+      "Skill(commit-helper)"
     ],
     "additionalDirectories": [
       "~/work/.worktrees"
@@ -147,6 +154,7 @@
     "refreshInterval": 60
   },
   "enabledPlugins": {},
+  "outputStyle": "Explanatory",
   "sandbox": {
     "allowUnsandboxedCommands": true,
     "excludedCommands": [
