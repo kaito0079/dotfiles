@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SDD のフェーズドキュメント (.docs/specs/**/*.md) が Write されたら、
-# cmux のブラウザサーフェスをバックグラウンドで開き、markdown viewer で確認できるようにする。
+# Claude が .md ファイルを Write / Edit したら、cmux のプレビューペインを
+# バックグラウンドで開き、markdown viewer で確認できるようにする。
 # cmux 外 (CMUX_WORKSPACE_ID 未設定) では何もしない。
 set -euo pipefail
 
@@ -11,10 +11,13 @@ payload="$(cat)"
 tool_name="$(printf '%s' "$payload" | jq -r '.tool_name // ""')"
 file_path="$(printf '%s' "$payload" | jq -r '.tool_input.file_path // ""')"
 
-[ "$tool_name" = "Write" ] || exit 0
+case "$tool_name" in
+  Write | Edit) : ;;
+  *) exit 0 ;;
+esac
 
 case "$file_path" in
-  *"/.docs/specs/"*.md) : ;;
+  *.md) : ;;
   *) exit 0 ;;
 esac
 

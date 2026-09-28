@@ -122,11 +122,11 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Write",
+        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/sdd_open_in_cmux.sh"
+            "command": "bash ~/.claude/hooks/markdown_open_in_cmux.sh"
           }
         ]
       },
