@@ -72,6 +72,10 @@ killall Finder
 # キー長押し時の特殊文字ポップアップを無効にし、キーリピートを有効にする
 defaults write -g ApplePressAndHoldEnabled -bool false
 
+# Hammerspoon のクラッシュレポート送信を無効にする
+# init.lua でも無効化しているが、初回起動前から効かせるためここでも設定する
+defaults write org.hammerspoon.Hammerspoon HSUploadCrashData -bool false
+
 
 # Install brew
 #(echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> "$HOME/.zprofile"
