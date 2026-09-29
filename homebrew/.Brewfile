@@ -74,6 +74,8 @@ cask "font-hackgen-nerd"
 cask "font-noto-sans-jp"
 # Terminal emulator that uses platform-native UI and GPU acceleration
 cask "ghostty"
+# Desktop automation application
+cask "hammerspoon"
 # Menu bar manager
 cask "jordanbaird-ice"
 # Software for Logitech devices
