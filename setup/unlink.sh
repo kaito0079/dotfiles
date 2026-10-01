@@ -1,8 +1,7 @@
 #!/bin/bash
-# link.sh が張った symlink と、コピーで置いたスキルを解除する。
+# link.sh が張った symlink を解除する。
 #
-# 対象は「リポジトリを指す symlink」と「印 (.copied-by-dotfiles) のあるスキルの
-# ディレクトリ」のみ。それ以外の実ファイル / 実ディレクトリや、
+# 対象は「リポジトリを指す symlink」のみ。それ以外の実ファイル / 実ディレクトリや、
 # 他の場所を指すリンクには触れない。rm は symlink 自体を消すだけなので、
 # リンク先の設定本体が失われることはない。
 #
@@ -10,7 +9,6 @@
 # 逆引きする方式だと拾えないため、配置先を走査する方式にしている)。
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../" && pwd)"
-CLAUDE_TOOLS="${CLAUDE_TOOLS_DIR:-${SCRIPT_DIR}/claude-tools}"
 
 assume_yes=0
 [ "${1:-}" = "-y" ] || [ "${1:-}" = "--yes" ] && assume_yes=1
@@ -21,15 +19,13 @@ dest_dirs=("$HOME")
 for package in "${SCRIPT_DIR}"/*/ ; do
     package="${package%/}"
     case "$(basename "$package")" in
-        setup|claude-tools) continue ;;
+        setup) continue ;;
     esac
     for dotfile in "$package"/.??* ; do
         [ -d "$dotfile" ] && [ ! -L "$dotfile" ] || continue
         dest_dirs+=("${HOME}/$(basename "$dotfile")")
     done
 done
-# claude-tools 由来の配置先
-dest_dirs+=("$HOME/.claude/skills" "$HOME/.claude/agents" "$HOME/.local/bin")
 
 # 重複を除く (macOS 標準の bash 3.2 には mapfile が無いのでループで組み立てる)
 uniq_dirs=()
@@ -45,19 +41,12 @@ for dir in "${dest_dirs[@]}"; do
         [ -n "$link" ] || continue
         target="$(readlink "$link")"
         case "$target" in
-            "${SCRIPT_DIR}"/*|"${CLAUDE_TOOLS}"/*) targets+=("$link") ;;
+            "${SCRIPT_DIR}"/*) targets+=("$link") ;;
         esac
     done < <(find "$dir" -maxdepth 1 -type l 2>/dev/null)
 done
 
-# link.sh がコピーで置いたスキル (印のファイルがあるディレクトリのみ)
-copies=()
-for dir in "$HOME/.claude/skills"/*/; do
-    dir="${dir%/}"
-    [ ! -L "$dir" ] && [ -f "$dir/.copied-by-dotfiles" ] && copies+=("$dir")
-done
-
-if [ "${#targets[@]}" -eq 0 ] && [ "${#copies[@]}" -eq 0 ]; then
+if [ "${#targets[@]}" -eq 0 ]; then
     echo "解除対象の symlink はありません。"
     exit 0
 fi
@@ -66,12 +55,6 @@ if [ "${#targets[@]}" -gt 0 ]; then
     echo "以下の ${#targets[@]} 件の symlink を解除します (リンク先の実体は削除しません):"
     for link in "${targets[@]}"; do
         printf '  %s -> %s\n' "~${link#"$HOME"}" "$(readlink "$link")"
-    done
-fi
-if [ "${#copies[@]}" -gt 0 ]; then
-    echo "以下の ${#copies[@]} 件のコピーを削除します (コピー元の実体は削除しません):"
-    for dir in "${copies[@]}"; do
-        printf '  %s\n' "~${dir#"$HOME"}"
     done
 fi
 
@@ -87,8 +70,5 @@ fi
 removed=0
 for link in "${targets[@]}"; do
     rm -f "$link" && removed=$((removed + 1))
-done
-for dir in "${copies[@]}"; do
-    rm -rf "$dir" && removed=$((removed + 1))
 done
 echo "解除 ${removed} 件"
