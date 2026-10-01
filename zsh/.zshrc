@@ -80,6 +80,9 @@ source ~/.config/zsh/ghq-fzf.zsh
 # GitHub の PR を fzf で検索して worktree に移動する (pr-switch / Ctrl+P)
 source ~/.config/zsh/pr-fzf.zsh
 
+# 実行コマンドを回数・順序つきで記録する (ActivityWatch と合わせた繰り返し作業の分析用)
+source ~/.config/zsh/aw-cmdlog.zsh
+
 # cmux のワークスペース色を git origin URL のハッシュから自動決定 (chpwd 連動)
 source ~/.config/zsh/cmux-workspace-color.zsh
 
