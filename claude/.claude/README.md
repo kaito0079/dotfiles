@@ -10,7 +10,7 @@
 | `hooks/` | `claude/.claude/hooks/` | dotfiles (このリポ) |
 | `CLAUDE.md` | `claude/.claude/CLAUDE.md` | dotfiles (このリポ) |
 | `keybindings.json` | `claude/.claude/keybindings.json` | dotfiles (このリポ) |
-| `statusline.sh` | `claude-tools/status-line.sh` | [kaito0079/claude-tools](https://github.com/kaito0079/claude-tools) (submodule) |
+| `statusline.sh` | `claude/.claude/statusline.sh` | dotfiles (このリポ) |
 | `skills/`, `agents/` | `claude-tools/{skills,agents}/*` | kaito0079/claude-tools (submodule) |
 
 symlink はディレクトリ単位 (`hooks/` ごとリンク) なので、`hooks/` にファイルを
@@ -58,7 +58,7 @@ exit 0 し、失敗しても Claude Code の動作を絶対にブロックしな
 | `cmux_preview.py` | Stop (差分) / `markdown_open_in_cmux.sh` から呼び出し (markdown) | 右のプレビューペインにタブを積む (下記参照) | `$CMUX_WORKSPACE_ID` と `cmux` CLI がある。差分は git repo 内かつ `cmux enable-browser` 済み |
 | `session_end_transcript_mirror.py` | Stop | git worktree で作業中のセッションのトランスクリプトを main worktree の project dir (`~/.claude/projects/<encoded-path>/`) にミラーする。worktree 横断でセッション履歴を一覧できるようにするため | git repo 内かつ main worktree 以外 |
 | `cmux_workspace_name_sync.sh` | statusline 描画のたび (`statusline_entry.sh` 経由) | Claude セッション名を cmux ワークスペース名に同期する (下記参照) | `$CMUX_WORKSPACE_ID` と `cmux` CLI と `jq` がある |
-| `statusline_entry.sh` | `settings.json` の `statusLine` | statusline の入力 JSON を「表示 (claude-tools の statusline.sh)」と「cmux ワークスペース名同期」に分配するエントリポイント | — |
+| `statusline_entry.sh` | `settings.json` の `statusLine` | statusline の入力 JSON を「表示 (statusline.sh)」と「cmux ワークスペース名同期」に分配するエントリポイント | — |
 
 ## プレビューペイン (cmux_preview.py)
 
@@ -123,8 +123,8 @@ exit 0 し、失敗しても Claude Code の動作を絶対にブロックしな
 
 ## statusline
 
-`settings.json` の `statusLine` → `statusline_entry.sh` → claude-tools の
-`statusline.sh` (表示本体: モデル / コンテキスト使用量 / burn rate /
+`settings.json` の `statusLine` → `statusline_entry.sh` → `statusline.sh`
+(表示本体: モデル / コンテキスト使用量 / burn rate /
 日次・週次・月次トークン集計)。
 
 ## 状態ファイル (gitignore 対象・~/.claude 直下)

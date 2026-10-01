@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # statusline のエントリポイント (settings.json の statusLine から呼ばれる)。
-# 表示本体は claude-tools 由来の ~/.claude/statusline.sh に委譲しつつ、
+# 表示本体は ~/.claude/statusline.sh (claude/.claude/statusline.sh) に委譲しつつ、
 # 同じ入力 JSON を cmux ワークスペース名同期にも流す。
 # 同期はバックグラウンド実行なので statusline の描画をブロックしない。
 set -u
