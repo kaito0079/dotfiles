@@ -66,6 +66,31 @@ claude/.claude/settings.json  →  ~/.claude/settings.json
 - `setup/`: セットアップ用のシェルスクリプト（`make` から呼ばれる）
 - `claude-tools/`: Claude Code のスキル / エージェント / ステータスライン（submodule）
 
+## 繰り返し作業の分析 (ActivityWatch)
+
+ActivityWatch の記録と zsh のコマンド記録を週 1 回集計し、繰り返している作業を
+ショートカットやコマンドにする案を Claude に書かせる。`activitywatch/` はリンク
+対象のドットエントリを持たず、`setup.sh` で LaunchAgent を登録して使う。
+
+```shell
+activitywatch/setup.sh        # LaunchAgent を登録する (初回・スクリプトの場所を変えたとき)
+activitywatch/aw-insights.sh  # 今すぐ分析する (--days 14 で期間を変える)
+```
+
+| ファイル | 役割 |
+|---|---|
+| `aw-collect.py` | 直近 N 日の記録を、回数・時間・切り替え順の JSON に集計する (ウィンドウは離席中を除く、コマンドの並びはタブごとに数える) |
+| `aw-insights.sh` | 集計結果を `claude -p` (読み取り専用ツールのみ) に渡してレポートを書かせる |
+| `insights-prompt.md` | Claude への指示。出力形式や参照する設定ファイルはここで変える |
+| `aw-prune.py` | 90 日より古い記録を毎日削除する |
+| `zsh/.config/zsh/aw-cmdlog.zsh` | 実行したコマンドを、どの cmux タブで打ったかと一緒に 1 回ごとに記録する (履歴は重複を消すため別に取る) |
+
+- 出力先は `~/.local/share/aw-insights/`（`report-<日付>.md`、`summary-<日付>.json`、`commands.tsv`）。
+  ウィンドウタイトルやコマンドがそのまま入るため、リポジトリの外に置く
+- 実行ログは `~/Library/Logs/aw-insights.log` と `aw-prune.log`
+- ブラウザの記録には、各ブラウザに ActivityWatch の Web Watcher 拡張を入れる必要がある (Brewfile では入らない)
+- 先頭を空白にしたコマンドは記録されない
+
 ## 参考資料
 
 - [Macの環境をdotfilesでセットアップしてみた改](https://zenn.dev/tsukuboshi/articles/6e82aef942d9af)
