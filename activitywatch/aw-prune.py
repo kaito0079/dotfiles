@@ -3,6 +3,7 @@
 
 記録はローカルに 90 日分だけ残す方針とする。
 ActivityWatch には保持期間の設定がないため、ローカルの REST API 経由で消す。
+zsh の aw-cmdlog.zsh が書くコマンドログも同じ期間で切り詰める。
 setup.sh で登録した LaunchAgent から毎日実行される。
 
   python3 aw-prune.py            # 削除する
@@ -10,6 +11,7 @@ setup.sh で登録した LaunchAgent から毎日実行される。
 """
 
 import json
+import os
 import sys
 import urllib.error
 import urllib.parse
@@ -18,6 +20,7 @@ from datetime import datetime, timedelta, timezone
 
 API = "http://localhost:5600/api/0"
 RETENTION_DAYS = 90
+CMDLOG = os.path.expanduser("~/.local/share/aw-insights/commands.tsv")
 
 
 def request(method, path):
@@ -25,6 +28,23 @@ def request(method, path):
     with urllib.request.urlopen(req, timeout=30) as res:
         body = res.read()
     return json.loads(body) if body else None
+
+
+def prune_cmdlog(cutoff, dry_run):
+    if not os.path.exists(CMDLOG):
+        return
+    with open(CMDLOG, encoding="utf-8", errors="replace") as f:
+        lines = f.readlines()
+    since = int(cutoff.timestamp())
+    kept = [l for l in lines if not (l.split("\t", 1)[0].isdigit() and int(l.split("\t", 1)[0]) < since)]
+    if not dry_run and len(kept) != len(lines):
+        # 書き込み中のシェルと競合しても行が混ざらないよう、別ファイルに書いてから差し替える
+        tmp = CMDLOG + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.writelines(kept)
+        os.replace(tmp, CMDLOG)
+    verb = "削除対象" if dry_run else "削除"
+    print(f"commands.tsv: {verb} {len(lines) - len(kept)} 行 ({cutoff:%Y-%m-%d} より前)")
 
 
 def main():
@@ -47,6 +67,7 @@ def main():
                 request("DELETE", f"/buckets/{bucket}/events/{event['id']}")
         verb = "削除対象" if dry_run else "削除"
         print(f"{bucket_id}: {verb} {len(events)} 件 ({cutoff:%Y-%m-%d} より前)")
+    prune_cmdlog(cutoff, dry_run)
     return 0
 
 
