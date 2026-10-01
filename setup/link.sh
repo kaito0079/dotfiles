@@ -6,6 +6,7 @@ created=0
 updated=0
 unchanged=0
 backed_up=0
+removed=0
 
 # $1 の実体を $2 のパスに symlink する。
 # - 既に同じリンクなら何もしない (毎回 25 行出力されると差分が埋もれるため)
@@ -36,6 +37,43 @@ link_one() {
     ln -fns "$src" "$dest"
     created=$((created + 1))
     echo "  作成  ~${dest#"$HOME"}"
+}
+
+# $1 のディレクトリを $2 にコピーする。スキル専用。
+# スキルを symlink で置くと、パスを realpath で解決してから許可判定する
+# PreToolUse hook (作業ディレクトリ外の参照を拒否するもの) に、
+# references/ などの補助ファイルの Read を拒否されるため実体を置く。
+# コピーした印として COPY_MARKER を置き、印のあるディレクトリだけを上書き対象にする。
+# 配置先を直接編集しても次回の make link で上書きされる。
+COPY_MARKER=".copied-by-dotfiles"
+copy_one() {
+    local src="$1" dest="$2" backup
+
+    if [ -d "$dest" ] && [ ! -L "$dest" ] && [ -f "$dest/$COPY_MARKER" ]; then
+        if diff -rq -x "$COPY_MARKER" "$src" "$dest" >/dev/null 2>&1; then
+            unchanged=$((unchanged + 1))
+            return
+        fi
+        rm -rf "$dest"
+        updated=$((updated + 1))
+        echo "  更新  ~${dest#"$HOME"} (コピー)"
+    elif [ -L "$dest" ]; then
+        rm -f "$dest"
+        updated=$((updated + 1))
+        echo "  更新  ~${dest#"$HOME"} (symlink -> コピー)"
+    else
+        if [ -e "$dest" ]; then
+            backup="${dest}.bak.$(date +%Y%m%d%H%M%S)"
+            mv "$dest" "$backup"
+            backed_up=$((backed_up + 1))
+            echo "  退避  ~${dest#"$HOME"} -> ~${backup#"$HOME"}"
+        fi
+        created=$((created + 1))
+        echo "  作成  ~${dest#"$HOME"} (コピー)"
+    fi
+
+    cp -R "$src" "$dest"
+    echo "$src" > "$dest/$COPY_MARKER"
 }
 
 # リポジトリ直下のディレクトリ 1 つが「パッケージ」= 1 ツール分の設定。
@@ -94,15 +132,35 @@ if [ -z "${CLAUDE_TOOLS_DIR:-}" ] && [ ! -d "$CLAUDE_TOOLS/skills" ]; then
 fi
 
 if [ -d "$CLAUDE_TOOLS" ]; then
-    # skills/ と agents/ を ~/.claude/ にぶら下げる
+    # skills/ はコピー、agents/ は symlink で ~/.claude/ にぶら下げる
+    # (skills をコピーにする理由は copy_one のコメントを参照)
     for sub in skills agents; do
         [ -d "$CLAUDE_TOOLS/$sub" ] || continue
         mkdir -p "$HOME/.claude/$sub"
         for item in "$CLAUDE_TOOLS/$sub"/*; do
             [ -e "$item" ] || continue
-            link_one "$item" "$HOME/.claude/$sub/$(basename "$item")"
+            if [ "$sub" = skills ] && [ -d "$item" ]; then
+                copy_one "$item" "$HOME/.claude/$sub/$(basename "$item")"
+            else
+                link_one "$item" "$HOME/.claude/$sub/$(basename "$item")"
+            fi
         done
     done
+
+    # claude-tools から消えた (名前を変えた・削除した) スキルのコピーを片付ける。
+    # 印のあるディレクトリだけを対象にし、手で置いたスキルには触れない。
+    # 印に書かれたコピー元のパスではなく名前で判定するのは、CLAUDE_TOOLS_DIR で
+    # 別の clone に切り替えたとき、古いパスがたまたま残っていることがあるため。
+    if [ -d "$CLAUDE_TOOLS/skills" ]; then
+        for dest in "$HOME/.claude/skills"/*/; do
+            dest="${dest%/}"
+            [ ! -L "$dest" ] && [ -f "$dest/$COPY_MARKER" ] || continue
+            [ -d "$CLAUDE_TOOLS/skills/$(basename "$dest")" ] && continue
+            rm -rf "$dest"
+            removed=$((removed + 1))
+            echo "  削除  ~${dest#"$HOME"} (claude-tools に存在しないスキルのコピー)"
+        done
+    fi
 
     # scripts/*.py を ~/.local/bin/<拡張子なしのコマンド名> に配置
     if [ -d "$CLAUDE_TOOLS/scripts" ]; then
@@ -131,7 +189,7 @@ if [ ! -f "$HOME/.gitconfig.local" ] && [ -f "${SCRIPT_DIR}/git/.gitconfig.local
     echo ""
 fi
 
-echo "作成 ${created} / 更新 ${updated} / 変更なし ${unchanged} / 退避 ${backed_up}"
+echo "作成 ${created} / 更新 ${updated} / 変更なし ${unchanged} / 退避 ${backed_up} / 削除 ${removed}"
 if [ "$backed_up" -gt 0 ]; then
     echo "⚠️  既存のファイルを .bak.<日時> に退避しました。不要なら削除してください。"
 fi
