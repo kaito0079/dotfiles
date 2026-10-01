@@ -18,10 +18,10 @@ symlink はディレクトリ単位 (`hooks/` ごとリンク) なので、`hook
 ## スキル / エージェント
 
 スキル・エージェント・ユーティリティコマンドは、別リポジトリ
-[kaito0079/claude-tools](https://github.com/kaito0079/claude-tools) で Claude Code の
+[kaito0079/claude-plugins](https://github.com/kaito0079/claude-plugins) で Claude Code の
 プラグイン (`kaito-review` / `kaito-workflow`) として配布している。公開可能な資産と
 マシン固有の配線 (`settings.json`・hook 本体・ステータスライン) を分けるため。
-導入方法は claude-tools の README を参照。
+導入方法は claude-plugins の README を参照。
 
 ## フック一覧
 

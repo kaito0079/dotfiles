@@ -26,7 +26,8 @@
    - `hammerspoon/.hammerspoon/` (ホットキー・ウィンドウ配置)
    - `zsh/aliases.zsh`、`zsh/.config/zsh/` (エイリアス・関数・キーバインド)
    - `raycast/`、`claude/.claude/settings.json` (許可リスト・フック)
-   - `claude-tools/skills/`、`claude-tools/agents/` (スキル・エージェント)
+   - `$HOME/work/github.com/kaito0079/claude-plugins/plugins/*/skills/`、`.../agents/` (Claude のスキル・エージェント。
+     プラグインとして配布している別リポジトリ。読めなければ省略してよい)
    既にショートカットがある作業は、案に含めず「既存の手段を使っていない可能性」として別に挙げる。
    Raycast のホットキーは Raycast 内に暗号化して保存されていて読めない。代わりに `switches` から判断する。
    - `shortcuts_used` に出ている組み合わせは、そのアプリへのショートカットとして登録済みで使えている

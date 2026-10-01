@@ -64,7 +64,7 @@ claude/.claude/settings.json  →  ~/.claude/settings.json
   - `make unlink` で解除できる。対象はリポジトリを指す symlink のみで、実ファイルや
     リンク先の実体には触れない
 - `setup/`: セットアップ用のシェルスクリプト（`make` から呼ばれる）
-- Claude Code のスキル / エージェントは別リポジトリ [kaito0079/claude-tools](https://github.com/kaito0079/claude-tools)
+- Claude Code のスキル / エージェントは別リポジトリ [kaito0079/claude-plugins](https://github.com/kaito0079/claude-plugins)
   でプラグインとして配布している。導入方法はそちらの README を参照
 
 ## 繰り返し作業の分析 (ActivityWatch)

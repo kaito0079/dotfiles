@@ -19,10 +19,12 @@ REPORT="${OUT_DIR}/report-${TODAY}.md"
 mkdir -p "$OUT_DIR"
 /usr/bin/python3 "${SCRIPT_DIR}/aw-collect.py" "$@" > "$SUMMARY"
 
-# 読み取り系のツールだけを渡し、dotfiles 以外のファイルや編集には触れさせない
+# 読み取り系のツールだけを渡し、dotfiles とスキルを置いたリポジトリ以外や編集には触れさせない
+PLUGINS="${HOME}/work/github.com/kaito0079/claude-plugins"
 cd "$DOTFILES"
 "${HOME}/.local/bin/claude" -p "$(cat "${SCRIPT_DIR}/insights-prompt.md")" \
     --tools "Read,Grep,Glob" \
+    --add-dir "$PLUGINS" \
     --no-session-persistence \
     < "$SUMMARY" > "$REPORT"
 
