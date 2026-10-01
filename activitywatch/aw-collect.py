@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""ActivityWatch・シェルのコマンドログ・Claude のトランスクリプトから、
-繰り返し作業の集計を JSON で出力する。
+"""ActivityWatch・シェルのコマンドログ・Hammerspoon の入力ログ・Claude のトランスクリプト
+から、繰り返し作業の集計を JSON で出力する。
 
 生のイベントは 1 日で数千件になり、そのまま Claude に渡すと読み切れないため、
 「何を・何回・どの順で」だけに縮めてから aw-insights.sh に渡す。
@@ -23,6 +23,9 @@ from datetime import datetime, timedelta, timezone
 
 API = "http://localhost:5600/api/0"
 CMDLOG = os.path.expanduser("~/.local/share/aw-insights/commands.tsv")
+# hammerspoon/.hammerspoon/input-log.lua が書く
+SWITCHES = os.path.expanduser("~/.local/share/aw-insights/switches.tsv")
+COMBOS = os.path.expanduser("~/.local/share/aw-insights/combos.tsv")
 TOP = 20
 # これより短い滞在は通過しただけとみなし、切り替えの集計に含めない
 MIN_DWELL_SEC = 3
@@ -38,6 +41,9 @@ CLAUDE_PROJECTS = os.path.expanduser("~/.claude/projects")
 CLAUDE_SEQ_GAP_SEC = 120
 CD_PREFIX_RE = re.compile(r"^cd \S+ && ")
 SLASH_RE = re.compile(r"<command-name>(/[^<]+)</command-name>")
+# Slack のウィンドウタイトル「<名前>（チャンネル） - <ワークスペース> - … - Slack」から名前と種類を取る。
+# 先頭の「! 」「* 」は未読の印。ワークスペース名以降は使わない
+SLACK_TITLE_RE = re.compile(r"^[!*]?\s*(.+?)(?:（(チャンネル|DM)）)?\s+-\s")
 
 
 def request(path, body=None):
@@ -110,6 +116,32 @@ def summarize_window(events):
     }
 
 
+def summarize_slack(events):
+    """Slack のチャンネル・DM ごとの訪問回数と滞在時間を、ウィンドウタイトルから集計する。"""
+    sec, visits, kinds = Counter(), Counter(), {}
+    last = None
+    for e in events:
+        if e["data"].get("app") != "Slack":
+            last = None
+            continue
+        m = SLACK_TITLE_RE.match(e["data"].get("title", ""))
+        if not m:
+            continue
+        name, kind = m.group(1), m.group(2)
+        # 種類の付かないタイトルは「アクティビティ」「スレッド」などの画面
+        kinds[name] = {"チャンネル": "channel", "DM": "dm"}.get(kind, "view")
+        sec[name] += e["duration"]
+        if e["duration"] >= MIN_DWELL_SEC and name != last:
+            visits[name] += 1
+            last = name
+    if not visits:
+        return None
+    return [
+        {"name": name, "kind": kinds[name], "visits": n, "minutes": round(sec[name] / 60, 1)}
+        for name, n in visits.most_common(30)
+    ]
+
+
 def summarize_web(events):
     domain_sec = Counter()
     url_cnt = Counter()
@@ -129,6 +161,70 @@ def summarize_web(events):
         "page_visits": top(url_cnt, 30),
         "domain_switch_pairs": fmt_ngrams(ngrams(visits, 2)),
     }
+
+
+def read_tsv(path, since):
+    """1 列目が epoch 秒の TSV を読み、since 以降の行を返す。"""
+    if not os.path.exists(path):
+        return []
+    rows = []
+    with open(path, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            parts = line.rstrip("\n").split("\t")
+            if parts[0].isdigit() and int(parts[0]) >= since:
+                rows.append(parts)
+    return rows
+
+
+def summarize_switches(since):
+    """アプリをどうやって切り替えたか (input-log.lua の switches.tsv) を切り替え先ごとに集計する。
+
+    ショートカットを設定していないのか、設定しているのに使えていないのかを見分ける材料にする。
+    """
+    rows = [r for r in read_tsv(SWITCHES, since) if len(r) == 5]
+    if not rows:
+        return None
+    by_app = defaultdict(lambda: {"total": 0, "how": Counter(), "shortcuts": Counter(), "mouse": Counter(), "raycast_sec": []})
+    for _, src, dst, how, detail in rows:
+        a = by_app[dst]
+        a["total"] += 1
+        a["how"][how] += 1
+        if how == "shortcut":
+            a["shortcuts"][detail] += 1
+        elif how == "mouse":
+            a["mouse"][detail] += 1
+        elif how == "raycast" and detail.isdigit():
+            a["raycast_sec"].append(int(detail))
+    apps = []
+    for name, a in sorted(by_app.items(), key=lambda x: x[1]["total"], reverse=True)[:20]:
+        sec = a["raycast_sec"]
+        apps.append({
+            "app": name,
+            "switches": a["total"],
+            "how": dict(a["how"].most_common()),
+            # 同じ組み合わせで毎回同じアプリに移っていれば、そのアプリへのショートカットとして登録済み
+            "shortcuts_used": top(a["shortcuts"], 5),
+            "mouse_places": dict(a["mouse"].most_common()),
+            "raycast_median_sec": sorted(sec)[len(sec) // 2] if sec else None,
+        })
+    return {
+        "since": datetime.fromtimestamp(int(rows[0][0]), timezone.utc).isoformat(),
+        "total": len(rows),
+        "how": dict(Counter(r[3] for r in rows).most_common()),
+        "by_target_app": apps,
+    }
+
+
+def summarize_combos(since):
+    """修飾キー付きの組み合わせの回数 (input-log.lua の combos.tsv) をアプリごとに集計する。"""
+    counts = defaultdict(Counter)
+    for r in read_tsv(COMBOS, since):
+        if len(r) == 4 and r[3].isdigit():
+            counts[r[1]][r[2]] += int(r[3])
+    if not counts:
+        return None
+    ranked = sorted(counts.items(), key=lambda x: sum(x[1].values()), reverse=True)[:15]
+    return [{"app": app, "total": sum(c.values()), "top": top(c, 10)} for app, c in ranked]
 
 
 def run_ngrams(groups, gap_sec):
@@ -340,12 +436,16 @@ def main():
     result = {"period": {"start": start.isoformat(), "end": end.isoformat(), "days": days}}
     # macOS は HostName 未設定だとホスト名がネットワーク次第で変わり、
     # そのたびに aw-watcher-*_<ホスト名> のバケットが増える
-    result["window"] = summarize_window(query(period, find("aw-watcher-window_"), afk))
+    window_events = query(period, find("aw-watcher-window_"), afk)
+    result["window"] = summarize_window(window_events)
+    result["slack"] = summarize_slack(window_events)
     # aw-watcher-web は拡張機能を入れたブラウザごとにバケットが分かれる
     web = find("aw-watcher-web")
     web_events = query(period, web, afk) if web else []
     result["web"] = summarize_web(web_events) if web_events else None
     result["shell"] = summarize_commands(int(start.timestamp()))
+    result["switches"] = summarize_switches(int(start.timestamp()))
+    result["combos"] = summarize_combos(int(start.timestamp()))
     result["claude"] = summarize_claude(int(start.timestamp()))
 
     json.dump(result, sys.stdout, ensure_ascii=False, indent=1)

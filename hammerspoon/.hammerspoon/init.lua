@@ -21,3 +21,6 @@ require("hs.ipc")
 
 -- モニター接続時のウィンドウ配置 (環境ごとの設定は profiles.lua)
 require("layout")
+
+-- アプリの切り替え手段とショートカットの回数を記録する (繰り返し作業の分析用)
+require("input-log")

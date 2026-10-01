@@ -72,8 +72,8 @@ claude/.claude/settings.json  →  ~/.claude/settings.json
 
 ## 繰り返し作業の分析 (ActivityWatch)
 
-ActivityWatch の記録・zsh のコマンド記録・Claude Code のトランスクリプトを週 1 回
-集計し、繰り返している作業をショートカットやコマンドにする案を Claude に書かせる。
+ActivityWatch の記録・zsh のコマンド記録・Hammerspoon の入力記録・Claude Code の
+トランスクリプトを週 1 回集計し、繰り返している作業をショートカットやコマンドにする案を Claude に書かせる。
 `activitywatch/` はリンク対象のドットエントリを持たず、`setup.sh` で LaunchAgent を
 登録して使う。
 
@@ -88,14 +88,16 @@ activitywatch/aw-insights.sh  # 今すぐ分析する (--days 14 で期間を変
 | `aw-insights.sh` | 集計結果を `claude -p` (読み取り専用ツールのみ) に渡してレポートを書かせる |
 | `insights-prompt.md` | Claude への指示。出力形式や参照する設定ファイルはここで変える |
 | `aw-prune.py` | 90 日より古い記録を毎日削除する |
+| `hammerspoon/.hammerspoon/input-log.lua` | アプリをどうやって切り替えたか (ショートカット / Raycast / マウスなど) と、修飾キー付きの組み合わせの回数を記録する |
 | `zsh/.config/zsh/aw-cmdlog.zsh` | 実行したコマンドを、どの cmux タブで打ったかと一緒に 1 回ごとに記録する (履歴は重複を消すため別に取る) |
 
-- 出力先は `~/.local/share/aw-insights/`（`report-<日付>.md`、`summary-<日付>.json`、`commands.tsv`）。
+- 出力先は `~/.local/share/aw-insights/`（`report-<日付>.md`、`summary-<日付>.json`、`commands.tsv`、`switches.tsv`、`combos.tsv`）。
   ウィンドウタイトルやコマンドがそのまま入るため、リポジトリの外に置く
 - Claude のトランスクリプトは `~/.claude/projects/*/*.jsonl` を読むだけで、新たに記録はしない
 - 実行ログは `~/Library/Logs/aw-insights.log` と `aw-prune.log`
 - ブラウザの記録には、各ブラウザに ActivityWatch の Web Watcher 拡張を入れる必要がある (Brewfile では入らない)
 - 先頭を空白にしたコマンドは記録されない
+- 入力の記録は修飾キー付きの組み合わせだけで、文字入力・セキュア入力中の入力・クリックの座標は残さない
 
 ## 参考資料
 
