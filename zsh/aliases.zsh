@@ -29,6 +29,7 @@ alias gstp='git stash pop'
 # pwt (Parallel Worktrees) 関連のエイリアス
 alias pws='pwt switch'
 alias pwsm='pwt switch 0'
+alias pwr='pwt remove'   # pwr . で今いる worktree を削除する (対象は毎回指定する)
 
 # Docker関連のエイリアス
 alias d='docker'
