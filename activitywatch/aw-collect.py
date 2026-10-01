@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""ActivityWatch とシェルのコマンドログから、繰り返し作業の集計を JSON で出力する。
+"""ActivityWatch・シェルのコマンドログ・Claude のトランスクリプトから、
+繰り返し作業の集計を JSON で出力する。
 
 生のイベントは 1 日で数千件になり、そのまま Claude に渡すと読み切れないため、
 「何を・何回・どの順で」だけに縮めてから aw-insights.sh に渡す。
@@ -9,6 +10,7 @@
   python3 aw-collect.py --days 14  # 期間を変える
 """
 
+import glob
 import json
 import os
 import re
@@ -29,6 +31,13 @@ CMD_SEQ_GAP_SEC = 300
 # トークン類がそのまま Claude に渡らないよう、英字と数字が混ざった長い文字列は伏せる。
 # `-` や `/` で区切られたブランチ名・パスは読めるよう対象にしない
 SECRET_RE = re.compile(r"(?=[A-Za-z0-9_+=]*[0-9])(?=[A-Za-z0-9_+=]*[A-Za-z])[A-Za-z0-9_+=]{24,}")
+# 作業中とみなすイベントの間隔 (これより空いたら中断していたとみなす)
+ACTIVE_GAP_SEC = 300
+CLAUDE_PROJECTS = os.path.expanduser("~/.claude/projects")
+# Claude はコマンドを続けて実行するので、人より短い間隔で区切る
+CLAUDE_SEQ_GAP_SEC = 120
+CD_PREFIX_RE = re.compile(r"^cd \S+ && ")
+SLASH_RE = re.compile(r"<command-name>(/[^<]+)</command-name>")
 
 
 def request(path, body=None):
@@ -201,6 +210,111 @@ def summarize_commands(since):
     }
 
 
+def parse_ts(value):
+    return int(datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp())
+
+
+def short_bash(cmd):
+    """Claude の Bash コマンドを、集計で揃うように先頭行・cd を除いた形に縮める。"""
+    first = cmd.strip().splitlines()[0] if cmd.strip() else ""
+    first = CD_PREFIX_RE.sub("", first)
+    return SECRET_RE.sub("<redacted>", first)[:100]
+
+
+def summarize_claude(since):
+    """Claude Code のトランスクリプト (~/.claude/projects/*/*.jsonl) を集計する。
+
+    ターミナルでの作業の多くは Claude に任せているため、自分で打つコマンドより
+    「何を頼み、Claude が何を実行したか」の方が繰り返しを表す。
+    """
+    # session_end_transcript_mirror.py が main worktree 側に複製を置くため、
+    # 同じセッション ID のファイルは最後に更新された 1 つだけを読む
+    latest = {}
+    for path in glob.glob(os.path.join(CLAUDE_PROJECTS, "*", "*.jsonl")):
+        mtime = os.path.getmtime(path)
+        if mtime < since:
+            continue
+        sid = os.path.basename(path)
+        if sid not in latest or mtime > latest[sid][0]:
+            latest[sid] = (mtime, path)
+    if not latest:
+        return None
+
+    sessions = []
+    prompts, slash, tools, bash = [], Counter(), Counter(), Counter()
+    bash_by_session = {}
+    for _, path in latest.values():
+        info = {"title": "", "cwd": "", "branch": "", "prompts": 0, "bash": 0, "first": None, "last": None, "active": 0}
+        seq = []
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                try:
+                    d = json.loads(line)
+                except ValueError:
+                    continue
+                if d.get("aiTitle"):
+                    info["title"] = d["aiTitle"]
+                if d.get("isSidechain") or "timestamp" not in d:
+                    continue
+                ts = parse_ts(d["timestamp"])
+                if ts < since:
+                    continue
+                if info["last"] is not None and 0 < ts - info["last"] <= ACTIVE_GAP_SEC:
+                    info["active"] += ts - info["last"]
+                info["first"] = info["first"] or ts
+                info["last"] = ts
+                info["cwd"] = info["cwd"] or home(d.get("cwd", ""))
+                info["branch"] = d.get("gitBranch") or info["branch"]
+                content = (d.get("message") or {}).get("content")
+                if d.get("type") == "user" and isinstance(content, str):
+                    m = SLASH_RE.search(content)
+                    if m:
+                        slash[m.group(1)] += 1
+                    elif (d.get("origin") or {}).get("kind") == "human":
+                        info["prompts"] += 1
+                        prompts.append((ts, SECRET_RE.sub("<redacted>", " ".join(content.split()))[:120]))
+                elif d.get("type") == "assistant" and isinstance(content, list):
+                    for c in content:
+                        if c.get("type") != "tool_use":
+                            continue
+                        tools[c.get("name", "?")] += 1
+                        if c.get("name") == "Bash":
+                            cmd = short_bash((c.get("input") or {}).get("command", ""))
+                            bash[cmd] += 1
+                            seq.append((ts, cmd))
+                            info["bash"] += 1
+        if info["first"] is None:
+            continue
+        sessions.append(info)
+        bash_by_session[path] = seq
+
+    pairs, triples = run_ngrams(bash_by_session, CLAUDE_SEQ_GAP_SEC)
+    # 何日もかけて再開するセッションがあるため、最初と最後の差ではなく作業していた時間で並べる
+    sessions.sort(key=lambda s: s["active"], reverse=True)
+    return {
+        "sessions": len(sessions),
+        "busiest_sessions": [
+            {
+                "title": s["title"][:60],
+                "cwd": s["cwd"],
+                "branch": s["branch"],
+                "active_minutes": round(s["active"] / 60),
+                "prompts": s["prompts"],
+                "bash": s["bash"],
+            }
+            for s in sessions[:15]
+        ],
+        # 言い回しが毎回違うので回数では揃わない。新しい順に並べて傾向を読ませる
+        "recent_prompts": [p for _, p in sorted(prompts, reverse=True)[:80]],
+        "slash_commands": top(slash),
+        "tools": top(tools),
+        "bash_commands": top(bash, 30),
+        "bash_heads": top(Counter(" ".join(c.split()[:2]) for c in bash.elements())),
+        "bash_pairs": pairs,
+        "bash_triples": triples,
+    }
+
+
 def main():
     days = 7
     if "--days" in sys.argv:
@@ -232,6 +346,7 @@ def main():
     web_events = query(period, web, afk) if web else []
     result["web"] = summarize_web(web_events) if web_events else None
     result["shell"] = summarize_commands(int(start.timestamp()))
+    result["claude"] = summarize_claude(int(start.timestamp()))
 
     json.dump(result, sys.stdout, ensure_ascii=False, indent=1)
     print()
