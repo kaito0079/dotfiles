@@ -52,6 +52,8 @@ brew "zsh-autosuggestions"
 brew "kaito0079/tap/pwt"
 # Supabase CLI
 brew "supabase/tap/supabase"
+# Time tracker
+cask "activitywatch"
 # Enable Windows-like alt-tab
 cask "alt-tab"
 # Tools for building Android applications
