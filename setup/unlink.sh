@@ -1,7 +1,8 @@
 #!/bin/bash
-# link.sh が張った symlink を解除する。
+# link.sh が張った symlink と、コピーで置いたプラグインを解除する。
 #
-# 対象は「リポジトリを指す symlink」のみ。それ以外の実ファイル / 実ディレクトリや、
+# 対象は「リポジトリを指す symlink」と「印 (.copied-by-dotfiles) のある ~/.claude/skills/ 以下の
+# ディレクトリ」のみ。それ以外の実ファイル / 実ディレクトリや、
 # 他の場所を指すリンクには触れない。rm は symlink 自体を消すだけなので、
 # リンク先の設定本体が失われることはない。
 #
@@ -46,7 +47,14 @@ for dir in "${dest_dirs[@]}"; do
     done < <(find "$dir" -maxdepth 1 -type l 2>/dev/null)
 done
 
-if [ "${#targets[@]}" -eq 0 ]; then
+# link.sh がコピーで置いたプラグイン (印のファイルがあるディレクトリのみ)
+copies=()
+for dir in "$HOME/.claude/skills"/*/; do
+    dir="${dir%/}"
+    [ ! -L "$dir" ] && [ -f "$dir/.copied-by-dotfiles" ] && copies+=("$dir")
+done
+
+if [ "${#targets[@]}" -eq 0 ] && [ "${#copies[@]}" -eq 0 ]; then
     echo "解除対象の symlink はありません。"
     exit 0
 fi
@@ -55,6 +63,12 @@ if [ "${#targets[@]}" -gt 0 ]; then
     echo "以下の ${#targets[@]} 件の symlink を解除します (リンク先の実体は削除しません):"
     for link in "${targets[@]}"; do
         printf '  %s -> %s\n' "~${link#"$HOME"}" "$(readlink "$link")"
+    done
+fi
+if [ "${#copies[@]}" -gt 0 ]; then
+    echo "以下の ${#copies[@]} 件のコピーを削除します (コピー元の実体は削除しません):"
+    for dir in "${copies[@]}"; do
+        printf '  %s\n' "~${dir#"$HOME"}"
     done
 fi
 
@@ -70,5 +84,8 @@ fi
 removed=0
 for link in "${targets[@]}"; do
     rm -f "$link" && removed=$((removed + 1))
+done
+for dir in "${copies[@]}"; do
+    rm -rf "$dir" && removed=$((removed + 1))
 done
 echo "解除 ${removed} 件"

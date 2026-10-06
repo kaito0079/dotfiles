@@ -21,7 +21,26 @@ symlink はディレクトリ単位 (`hooks/` ごとリンク) なので、`hook
 [kaito0079/claude-plugins](https://github.com/kaito0079/claude-plugins) で Claude Code の
 プラグイン (`kaito-review` / `kaito-workflow`) として配布している。公開可能な資産と
 マシン固有の配線 (`settings.json`・hook 本体・ステータスライン) を分けるため。
-導入方法は claude-plugins の README を参照。
+
+このマシンでは、マーケットプレイスからは入れずに、`make link` がプラグインのディレクトリを
+`~/.claude/skills/<プラグイン名>/` に実体でコピーする。Claude Code は `~/.claude/skills/` 以下の
+`.claude-plugin/plugin.json` を見つけると、プラグイン (`<名前>@skills-dir`) として読み込む。
+作業ディレクトリの外を読ませない hook があるプロジェクトでも、スキルの補助ファイル
+(`references/` など) を読めるようにするため。
+
+```bash
+# 新しいマシン: プラグインのリポジトリを取得してから make link
+ghq get kaito0079/claude-plugins
+make link
+
+# プラグインを編集したら、make link でコピーし直す (中身が同じなら何もしない)
+make link
+```
+
+- コピー元は `~/work/github.com/kaito0079/claude-plugins`。別の場所に clone した場合は
+  `CLAUDE_PLUGINS_DIR` で指定する
+- コピーには印 (`.copied-by-dotfiles`) を置き、印のあるものだけを上書き・削除する
+- 同じプラグインをマーケットプレイスからも入れると二重に読み込まれるため、入れない
 
 ## フック一覧
 
