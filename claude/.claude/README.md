@@ -54,6 +54,7 @@ exit 0 し、失敗しても Claude Code の動作を絶対にブロックしな
 | `cmux_todo_progress.py` | SessionStart / Stop / PostToolUse(TodoWrite) | TodoWrite の完了率 (`done/total`) を cmux サイドバーのプログレスバーに表示。Stop / SessionStart でクリア | `$CMUX_WORKSPACE_ID` と `cmux` CLI がある |
 | `markdown_open_in_cmux.sh` | PostToolUse(Write\|Edit) | `.md` ファイルが Write / Edit されたら `cmux_preview.py` 経由でプレビュータブを開く (SDD のフェーズドキュメントに限らず全 markdown が対象) | `$CMUX_WORKSPACE_ID` がある |
 | `cmux_preview.py` | Stop (差分) / `markdown_open_in_cmux.sh` から呼び出し (markdown) | 右のプレビューペインにタブを積む (下記参照) | `$CMUX_WORKSPACE_ID` と `cmux` CLI がある。差分は git repo 内かつ `cmux enable-browser` 済み |
+| `aw_insights_notice.py` | SessionStart | 新しい繰り返し作業の分析レポート (`~/.local/share/aw-insights/report-*.md`) があれば、セッションの開始時に知らせる。レポートごとに 1 回だけで、同時に起動したセッションのうち 1 つだけが知らせる (`.noticed/` に印) | レポートがある |
 | `session_end_transcript_mirror.py` | Stop | git worktree で作業中のセッションのトランスクリプトを main worktree の project dir (`~/.claude/projects/<encoded-path>/`) にミラーする。worktree 横断でセッション履歴を一覧できるようにするため | git repo 内かつ main worktree 以外 |
 | `cmux_workspace_name_sync.sh` | statusline 描画のたび (`statusline_entry.sh` 経由) | Claude セッション名を cmux ワークスペース名に同期する (下記参照) | `$CMUX_WORKSPACE_ID` と `cmux` CLI と `jq` がある |
 | `statusline_entry.sh` | `settings.json` の `statusLine` | statusline の入力 JSON を「表示 (statusline.sh)」と「cmux ワークスペース名同期」に分配するエントリポイント | — |

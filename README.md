@@ -93,6 +93,8 @@ activitywatch/aw-insights.sh  # 今すぐ分析する (--days 14 で期間を変
   ウィンドウタイトルやコマンドがそのまま入るため、リポジトリの外に置く
 - Claude のトランスクリプトは `~/.claude/projects/*/*.jsonl` を読むだけで、新たに記録はしない
 - 実行ログは `~/Library/Logs/aw-insights.log` と `aw-prune.log`
+- レポートができたら macOS の通知を出し、次に Claude Code を開いたときにも 1 回だけ知らせる
+  (`claude/.claude/hooks/aw_insights_notice.py`)
 - ブラウザの記録には、各ブラウザに ActivityWatch の Web Watcher 拡張を入れる必要がある (Brewfile では入らない)
 - 先頭を空白にしたコマンドは記録されない
 - 入力の記録は修飾キー付きの組み合わせだけで、文字入力・セキュア入力中の入力・クリックの座標は残さない

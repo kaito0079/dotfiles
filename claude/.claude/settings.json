@@ -71,6 +71,10 @@
           {
             "type": "command",
             "command": "python3 ~/.claude/hooks/cmux_claude_status_pill.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/aw_insights_notice.py"
           }
         ]
       }
