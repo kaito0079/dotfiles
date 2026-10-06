@@ -1,6 +1,14 @@
 [user]
     name = YOUR_NAME
-    email = YOUR_EMAIL@example.com
+    # 公開リポジトリに本来のアドレスを残さないよう、既定は GitHub の noreply アドレスにする
+    # (GitHub の Settings → Emails で確認できる)
+    email = ID+USERNAME@users.noreply.github.com
 
 [ghq]
     root = /Users/YOUR_USERNAME/work
+
+# 特定の組織のリポジトリでだけ別のアドレスを使う場合は、そのアドレスを別ファイルに書いて
+# ディレクトリで切り替える。worktree の git の管理データは元の clone の .git 以下にあるため、
+# 元の clone の場所を指定すれば worktree にも効く。
+# [includeIf "gitdir:~/work/github.com/ORG_NAME/"]
+#     path = ~/.gitconfig.work
