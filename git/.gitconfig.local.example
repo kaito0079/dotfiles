@@ -7,8 +7,9 @@
 [ghq]
     root = /Users/YOUR_USERNAME/work
 
-# 特定の組織のリポジトリでだけ別のアドレスを使う場合は、そのアドレスを別ファイルに書いて
-# ディレクトリで切り替える。worktree の git の管理データは元の clone の .git 以下にあるため、
-# 元の clone の場所を指定すれば worktree にも効く。
+# 特定の組織のリポジトリでだけ別のアドレスを使う場合は、そのアドレスを
+# git/.gitconfig.work.local (*.local なので git では追跡されない) に書いて、
+# ディレクトリで切り替える。worktree の git の管理データは元の clone の .git 以下に
+# あるため、元の clone の場所を指定すれば worktree にも効く。
 # [includeIf "gitdir:~/work/github.com/ORG_NAME/"]
-#     path = ~/.gitconfig.work
+#     path = ~/.gitconfig.work.local
