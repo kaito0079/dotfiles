@@ -126,7 +126,7 @@
           },
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/cmux_preview.py diff"
+            "command": "python3 ~/.claude/hooks/cmux_preview.py diff --if-open"
           }
         ]
       }

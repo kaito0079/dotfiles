@@ -8,6 +8,9 @@ split するため、放っておくとペインがどんどん増える。こ�
 使い方:
     cmux_preview.py markdown <path>   markdown をプレビュータブとして開く
     cmux_preview.py diff [args...]    差分ビューアを開く (既定は --last-turn)
+    cmux_preview.py diff --if-open    差分タブが開いているときだけ更新する
+                                      (Stop フック用。開くのは cmux のボタンか
+                                      ショートカットから手動で行う)
 
 設計方針は他のフックと同じ best-effort。前提 (cmux 内で動いている・cmux CLI が
 ある) を満たさなければ黙って exit 0 し、失敗しても Claude Code をブロックしない。
@@ -229,6 +232,8 @@ def cmd_diff(extra: list[str]) -> int:
     if not workspace:
         return 0
 
+    if_open = "--if-open" in extra
+    extra = [a for a in extra if a != "--if-open"]
     patch = build_patch()
     was_selected = selected_workspace() == workspace
     panes, _, preview = read_tree(workspace)
@@ -236,6 +241,10 @@ def cmd_diff(extra: list[str]) -> int:
     # 既存の差分タブを控えておく。新しい方を開いてから閉じることで、
     # プレビューペインが一瞬空になって畳まれるのを避ける。
     stale = [s.uuid for p in panes for s in p.surfaces if s.is_diff]
+
+    # 毎ターン差分を出すと邪魔なので、自動更新は見ているときだけにする
+    if if_open and not stale:
+        return 0
 
     if not patch.strip():
         # 未コミットの変更が無いなら差分タブも残さない。残すとコミット前の
