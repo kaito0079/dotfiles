@@ -66,6 +66,36 @@
     "showPorts": false
   },
 
+  // 未コミット差分を右ペインに出す。Claude Code の Stop フックで毎ターン
+  // 出すのをやめ、必要なときにボタンかショートカットで開く。
+  // 新しいタブで実行して閉じるのは、currentTerminal だと Claude の入力欄に
+  // 文字が入ってしまうため。
+  "actions": {
+    "show-diff": {
+      "type": "command",
+      "title": "差分",
+      "subtitle": "未コミットの変更を右ペインに表示",
+      "keywords": ["diff", "git"],
+      "command": "python3 ~/.claude/hooks/cmux_preview.py diff; exit",
+      "target": "newTabInCurrentPane",
+      "shortcut": "cmd+shift+j",
+      "icon": { "type": "symbol", "name": "plus.forwardslash.minus" }
+    }
+  },
+
+  // buttons は既定のボタン列を置き換えるため、既定の 4 つも並べ直している
+  "ui": {
+    "surfaceTabBar": {
+      "buttons": [
+        "cmux.newTerminal",
+        "cmux.newBrowser",
+        "cmux.splitRight",
+        "cmux.splitDown",
+        "show-diff"
+      ]
+    }
+  },
+
   //   "workspaceColors" : {
   //     "colors" : {
   //       "Amber" : "#7D6608",
