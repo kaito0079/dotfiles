@@ -1,9 +1,11 @@
 #!/bin/bash
 # 直近の作業記録を集計し、Claude に繰り返し作業のショートカット化案を書かせる。
-# setup.sh で登録した LaunchAgent から週 1 回実行される。手動でも実行できる。
+# setup.sh で登録した LaunchAgent から毎週起動され、前回のレポートから 13 日以上
+# 経っていれば実行する (2 週間ごと)。手動ならいつでも実行できる。
 #
-#   ./aw-insights.sh            # 直近 7 日分
-#   ./aw-insights.sh --days 14  # 期間を変える (aw-collect.py にそのまま渡す)
+#   ./aw-insights.sh            # 直近 14 日分
+#   ./aw-insights.sh --days 7   # 期間を変える (aw-collect.py にそのまま渡す)
+#   ./aw-insights.sh --scheduled  # LaunchAgent 用。前回から 13 日未満なら何もしない
 #
 # 集計にはウィンドウタイトルやコマンドがそのまま入るため、出力はリポジトリの外に置く。
 
@@ -17,6 +19,17 @@ SUMMARY="${OUT_DIR}/summary-${TODAY}.json"
 REPORT="${OUT_DIR}/report-${TODAY}.md"
 
 mkdir -p "$OUT_DIR"
+
+if [ "${1:-}" = "--scheduled" ]; then
+    shift
+    # 手動で実行した後もそこから 2 週間空ける
+    if [ -n "$(find "$OUT_DIR" -maxdepth 1 -name 'report-*.md' -mtime -13)" ]; then
+        echo "前回のレポートから 13 日経っていないため飛ばしました"
+        exit 0
+    fi
+fi
+[ $# -eq 0 ] && set -- --days 14
+
 /usr/bin/python3 "${SCRIPT_DIR}/aw-collect.py" "$@" > "$SUMMARY"
 
 # 読み取り系のツールだけを渡し、dotfiles とスキルを置いたリポジトリ以外や編集には触れさせない

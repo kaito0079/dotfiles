@@ -71,13 +71,13 @@ claude/.claude/settings.json  →  ~/.claude/settings.json
 ## 繰り返し作業の分析 (ActivityWatch)
 
 ActivityWatch の記録・zsh のコマンド記録・Hammerspoon の入力記録・Claude Code の
-トランスクリプトを週 1 回集計し、繰り返している作業をショートカットやコマンドにする案を Claude に書かせる。
+トランスクリプトを 2 週間ごとに集計し、繰り返している作業をショートカットやコマンドにする案を Claude に書かせる。
 `activitywatch/` はリンク対象のドットエントリを持たず、`setup.sh` で LaunchAgent を
 登録して使う。
 
 ```shell
 activitywatch/setup.sh        # LaunchAgent を登録する (初回・スクリプトの場所を変えたとき)
-activitywatch/aw-insights.sh  # 今すぐ分析する (--days 14 で期間を変える)
+activitywatch/aw-insights.sh  # 今すぐ分析する (直近 14 日分。--days 7 で期間を変える)
 ```
 
 | ファイル | 役割 |

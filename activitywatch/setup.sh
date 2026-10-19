@@ -1,7 +1,8 @@
 #!/bin/bash
 # ActivityWatch 関連の LaunchAgent を登録する。
 # - aw-prune.py:   毎日 12:00 に保持期間 (90 日) より古い記録を削除する
-# - aw-insights.sh: 毎週月曜 9:00 (週の始業時) に繰り返し作業を分析してレポートを書く
+# - aw-insights.sh: 毎週月曜 9:00 (週の始業時) に起動し、前回から 13 日以上経っていれば
+#                   繰り返し作業を分析してレポートを書く (2 週間ごと)
 # plist にはスクリプトの絶対パスが必要なため、リポジトリの場所を解決してから書き出す。
 # スリープ中だった場合は復帰時に実行される。
 
@@ -58,7 +59,7 @@ register local.activitywatch.insights aw-insights "\
         <key>Weekday</key><integer>1</integer>
         <key>Hour</key><integer>9</integer>
         <key>Minute</key><integer>0</integer>" \
-    /bin/bash "${SCRIPT_DIR}/aw-insights.sh"
+    /bin/bash "${SCRIPT_DIR}/aw-insights.sh" --scheduled
 
 cat <<'EOF'
 
