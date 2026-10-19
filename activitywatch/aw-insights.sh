@@ -21,12 +21,16 @@ mkdir -p "$OUT_DIR"
 
 # 読み取り系のツールだけを渡し、dotfiles とスキルを置いたリポジトリ以外や編集には触れさせない
 PLUGINS="${HOME}/work/github.com/kaito0079/claude-plugins"
+# 書きかけを aw_insights_notice.py が拾わないよう、書き終えてから report-*.md にする
+TMP="${REPORT}.tmp"
+trap 'rm -f "$TMP"' EXIT
 cd "$DOTFILES"
 "${HOME}/.local/bin/claude" -p "$(cat "${SCRIPT_DIR}/insights-prompt.md")" \
     --tools "Read,Grep,Glob" \
     --add-dir "$PLUGINS" \
     --no-session-persistence \
-    < "$SUMMARY" > "$REPORT"
+    < "$SUMMARY" > "$TMP"
+mv "$TMP" "$REPORT"
 
 osascript -e "display notification \"${REPORT}\" with title \"繰り返し作業の分析ができました\"" || true
 echo "$REPORT"
