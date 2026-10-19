@@ -95,6 +95,8 @@ activitywatch/aw-insights.sh  # 今すぐ分析する (直近 14 日分。--days
 - 実行ログは `~/Library/Logs/aw-insights.log` と `aw-prune.log`
 - レポートができたら macOS の通知を出し、次に Claude Code を開いたときにも 1 回だけ知らせる
   (`claude/.claude/hooks/aw_insights_notice.py`)
+- `activitywatch/.env` (git 管理外) に `AW_SLACK_CHANNEL=<チャンネル ID>` を書いておくと、概要と提案の見出しを
+  claude.ai の Slack コネクタで投稿する (Slack アプリやトークンは不要)
 - ブラウザの記録には、各ブラウザに ActivityWatch の Web Watcher 拡張を入れる必要がある (Brewfile では入らない)
 - 先頭を空白にしたコマンドは記録されない
 - 入力の記録は修飾キー付きの組み合わせだけで、文字入力・セキュア入力中の入力・クリックの座標は残さない

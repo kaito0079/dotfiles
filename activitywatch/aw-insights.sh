@@ -46,4 +46,32 @@ cd "$DOTFILES"
 mv "$TMP" "$REPORT"
 
 osascript -e "display notification \"${REPORT}\" with title \"繰り返し作業の分析ができました\"" || true
+
+# 同じディレクトリの .env (git 管理外) に AW_SLACK_CHANNEL を書いておけば、
+# 概要と提案の見出しを Slack に投稿する。
+# claude.ai の Slack コネクタを使うので、Slack アプリやトークンは要らない
+# shellcheck source=/dev/null
+[ -f "${SCRIPT_DIR}/.env" ] && . "${SCRIPT_DIR}/.env"
+if [ -n "${AW_SLACK_CHANNEL:-}" ]; then
+    {
+        awk '
+            /^# /    { print "**" substr($0, 3) "**"; next }
+            /^## 概要/ { s = 1; next }
+            /^## 提案/ { s = 0; print ""; print "**提案**"; next }
+            /^## /   { s = 0; next }
+            /^### /  { print substr($0, 5); next }
+            s && NF  { print }
+        ' "$REPORT"
+        echo
+        echo "\`${REPORT/#$HOME/~}\`"
+    } > "$TMP"
+    # コネクタの接続を待ってから始めないと、ツールが見えないまま返答してしまう
+    MCP_CONNECTION_NONBLOCKING=false "${HOME}/.local/bin/claude" -p \
+        "標準入力の本文を、Slack のチャンネル ${AW_SLACK_CHANNEL} に一字一句変えずに投稿してください。投稿したら「投稿しました」とだけ答えてください。" \
+        --tools "" \
+        --allowedTools "mcp__claude_ai_Slack__slack_send_message" \
+        --no-session-persistence \
+        < "$TMP" || true
+fi
+
 echo "$REPORT"
