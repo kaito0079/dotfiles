@@ -42,6 +42,16 @@ make link
 - コピーには印 (`.copied-by-dotfiles`) を置き、印のあるものだけを上書き・削除する
 - 同じプラグインをマーケットプレイスからも入れると二重に読み込まれるため、入れない
 
+## mod
+
+`mods/` に Claude Code の mod (hooks module で画面や挙動を拡張するプラグイン) を置く。
+`settings.json` の `env.CLAUDE_CODE_PLUGIN_DIRS` で `~/.claude/mods/<名前>` を指定して読み込む
+(複数ある場合は `:` 区切り)。読み込み時に生成される `.claude-plugin/types/` は git 管理外。
+
+| mod | 何をするか |
+| --- | --- |
+| `md-links` | Claude が Write で作った `.md` を入力欄の上にボタンとして並べ (新しい順に最大 5 件)、押すと `cmux_preview.py markdown` で右のプレビューペインに開く。以前は作成のたびに自動で開いていたが、見ないことも多いため必要なときだけ開く形にした |
+
 ## フック一覧
 
 配線は `settings.json` の `hooks` セクション。全フック共通の設計方針:
@@ -52,8 +62,7 @@ exit 0 し、失敗しても Claude Code の動作を絶対にブロックしな
 | --- | --- | --- | --- |
 | `cmux_claude_status_pill.py` | SessionStart / UserPromptSubmit / Notification / Stop / SessionEnd | cmux サイドバーの `claude_code` ステータスピル (Running / Needs input) を devcontainer 内で再現する。ホストでは cmux の Claude ラッパーが同じピルを管理するため何もしない | `/.dockerenv` があり `$CMUX_WORKSPACE_ID` と `cmux` CLI がある |
 | `cmux_todo_progress.py` | SessionStart / Stop / PostToolUse(TodoWrite) | TodoWrite の完了率 (`done/total`) を cmux サイドバーのプログレスバーに表示。Stop / SessionStart でクリア | `$CMUX_WORKSPACE_ID` と `cmux` CLI がある |
-| `markdown_open_in_cmux.sh` | PostToolUse(Write\|Edit) | `.md` ファイルが Write / Edit されたら `cmux_preview.py` 経由でプレビュータブを開く (SDD のフェーズドキュメントに限らず全 markdown が対象) | `$CMUX_WORKSPACE_ID` がある |
-| `cmux_preview.py` | Stop (差分) / `markdown_open_in_cmux.sh` から呼び出し (markdown) | 右のプレビューペインにタブを積む (下記参照) | `$CMUX_WORKSPACE_ID` と `cmux` CLI がある。差分は git repo 内かつ `cmux enable-browser` 済み |
+| `cmux_preview.py` | Stop (差分) / mod `md-links` のボタンから呼び出し (markdown) | 右のプレビューペインにタブを積む (下記参照) | `$CMUX_WORKSPACE_ID` と `cmux` CLI がある。差分は git repo 内かつ `cmux enable-browser` 済み |
 | `aw_insights_notice.py` | SessionStart | 新しい繰り返し作業の分析レポート (`~/.local/share/aw-insights/report-*.md`) があれば、セッションの開始時に知らせる。レポートごとに 1 回だけで、同時に起動したセッションのうち 1 つだけが知らせる (`.noticed/` に印) | レポートがある |
 | `session_end_transcript_mirror.py` | Stop | git worktree で作業中のセッションのトランスクリプトを main worktree の project dir (`~/.claude/projects/<encoded-path>/`) にミラーする。worktree 横断でセッション履歴を一覧できるようにするため | git repo 内かつ main worktree 以外 |
 | `cmux_workspace_name_sync.sh` | statusline 描画のたび (`statusline_entry.sh` 経由) | Claude セッション名を cmux ワークスペース名に同期する (下記参照) | `$CMUX_WORKSPACE_ID` と `cmux` CLI と `jq` がある |

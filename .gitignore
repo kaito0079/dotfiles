@@ -16,3 +16,6 @@ __pycache__/
 *.token
 .env
 .env.local
+
+# Claude Code が mod の読み込み時に生成する型定義
+claude/.claude/mods/*/.claude-plugin/types/

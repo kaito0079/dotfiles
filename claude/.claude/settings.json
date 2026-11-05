@@ -1,6 +1,7 @@
 {
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/md-links"
   },
   "permissions": {
     "allow": [
@@ -132,15 +133,6 @@
       }
     ],
     "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/markdown_open_in_cmux.sh"
-          }
-        ]
-      },
       {
         "matcher": "TodoWrite",
         "hooks": [

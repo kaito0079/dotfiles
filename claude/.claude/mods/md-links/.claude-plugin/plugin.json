@@ -1,0 +1,6 @@
+{
+  "name": "md-links",
+  "version": "0.1.0",
+  "description": "Show buttons above the prompt for markdown files Claude wrote, opening them in the cmux preview pane",
+  "types": "./types/index.d.ts"
+}
