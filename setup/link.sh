@@ -100,6 +100,11 @@ for package in "${SCRIPT_DIR}"/*/ ; do
         [ -e "$dotfile" ] || continue
         case "$(basename "$dotfile")" in
             .DS_Store|.darwin-only) continue ;;
+            # パッケージ内で使うアプリの設定。$HOME に置くと別のツールが読み込みうる
+            .env) continue ;;
+            # パッケージ内で Claude Code を使うと作られる作業用ディレクトリ
+            # (claude パッケージの .claude は設定そのものなのでリンクする)
+            .claude) [ "$package_name" = "claude" ] || continue ;;
         esac
         [[ "$dotfile" == *".example" ]] && continue  # テンプレートファイルは除外
 
@@ -109,7 +114,11 @@ for package in "${SCRIPT_DIR}"/*/ ; do
             mkdir -p "$dest_dir"
             for item in "$dotfile"/* "$dotfile"/.??* ; do
                 [ -e "$item" ] || continue
-                [[ "$(basename "$item")" == ".DS_Store" ]] && continue
+                case "$(basename "$item")" in
+                    # .claude / .cc-writes は Claude Code が作業中に作るディレクトリ
+                    # (例: hammerspoon/.hammerspoon/.claude, claude/.claude/.cc-writes)
+                    .DS_Store|.claude|.cc-writes) continue ;;
+                esac
                 link_one "$item" "${dest_dir}/$(basename "$item")"
             done
         else
