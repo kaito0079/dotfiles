@@ -7,7 +7,8 @@
 -- screens: モニター名 -> 役割名 (rules の screen で参照する)
 -- rules:   bundle ID -> { 配置先の役割, 配置方法 }
 --          配置方法: "maximize" = ウィンドウのまま最大化 / "left-half" "right-half" = 左 / 右半分
---                    "fullscreen" = macOS のフルスクリーン / 省略 = 画面を移すだけ
+--                    省略 = 画面を移すだけ
+--                    (macOS のフルスクリーンは専用の Space への移動を待つ処理が不安定だったため使わない)
 -- default: rules にないアプリの配置 (rules と同じ形式。mode を省略すると画面を移すだけで、サイズは画面に収まるよう調整される)
 -- focus:   配置後に前面に出すアプリの bundle ID (省略可)
 
@@ -21,7 +22,7 @@ return {
     rules = {
       ["com.vivaldi.Vivaldi"] = { screen = "left", mode = "maximize" },
       ["com.cmuxterm.app"] = { screen = "center", mode = "maximize" },
-      ["com.tinyspeck.slackmacgap"] = { screen = "right", mode = "fullscreen" },
+      ["com.tinyspeck.slackmacgap"] = { screen = "right", mode = "maximize" },
     },
     default = { screen = "center" },
     focus = "com.cmuxterm.app",
@@ -35,7 +36,7 @@ return {
     rules = {
       ["com.cmuxterm.app"] = { screen = "main", mode = "left-half" },
       ["com.vivaldi.Vivaldi"] = { screen = "main", mode = "right-half" },
-      ["com.tinyspeck.slackmacgap"] = { screen = "laptop", mode = "fullscreen" },
+      ["com.tinyspeck.slackmacgap"] = { screen = "laptop", mode = "maximize" },
       ["com.google.Chrome"] = { screen = "laptop", mode = "maximize" },
       ["md.obsidian"] = { screen = "laptop", mode = "maximize" },
     },
@@ -49,7 +50,7 @@ return {
       ["Built-in Display"] = "laptop",
     },
     rules = {
-      ["com.tinyspeck.slackmacgap"] = { screen = "laptop", mode = "fullscreen" },
+      ["com.tinyspeck.slackmacgap"] = { screen = "laptop", mode = "maximize" },
     },
     default = { screen = "laptop", mode = "maximize" },
     focus = "com.cmuxterm.app",
