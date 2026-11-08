@@ -25,15 +25,16 @@
 1. カレントディレクトリは dotfiles リポジトリ。提案する前に、既にある仕組みを Read / Grep で確認する。
    - `hammerspoon/.hammerspoon/` (ホットキー・ウィンドウ配置)
    - `zsh/aliases.zsh`、`zsh/.config/zsh/` (エイリアス・関数・キーバインド)
-   - `raycast/`、`claude/.claude/settings.json` (許可リスト・フック)
+   - `claude/.claude/settings.json` (許可リスト・フック)
    - `$HOME/work/github.com/kaito0079/claude-plugins/plugins/*/skills/`、`.../agents/` (Claude のスキル・エージェント。
      プラグインとして配布している別リポジトリ。読めなければ省略してよい)
    既にショートカットがある作業は、案に含めず「既存の手段を使っていない可能性」として別に挙げる。
-   Raycast のホットキーは Raycast 内に暗号化して保存されていて読めない。代わりに `switches` から判断する。
+   アプリ切り替えのショートカットは `hammerspoon/.hammerspoon/app-keys.lua` で割り当てている。
+   Raycast には PC ごとのクイックリンクなどがあるが、暗号化して保存されていて読めない。使えているかは `switches` から判断する。
    - `shortcuts_used` に出ている組み合わせは、そのアプリへのショートカットとして登録済みで使えている
    - ショートカットが使われているのに `raycast` / `mouse` の割合が高いアプリは「登録済みだが使えていない」
-   - ショートカットが一度も使われていないアプリは「未登録の可能性」。Raycast か hammerspoon での割り当てを提案する
-   - `switches` が null か件数が少ないときは判断できないので、「Raycast で登録済みなら、使えていない可能性」と添える
+   - ショートカットが一度も使われていないアプリは「未登録の可能性」。`app-keys.lua` で割り当て済みでなければ、そこへの追加を提案する
+   - `switches` が null か件数が少ないときは判断できないので、「登録済みなら、使えていない可能性」と添える
 3. Slack は `slack` の訪問回数が多いチャンネル・DM を、Raycast のクイックリンクとして登録する候補に挙げる。
    Slack 内の移動手段は記録していないため、`combos` の Slack の `⌘k` の回数を「検索して開いている」目安にする。
    リンクは Slack でチャンネル名を右クリック →「リンクをコピー」で取れることを添える。

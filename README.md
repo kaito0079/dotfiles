@@ -53,11 +53,11 @@ cmux/.config/cmux/cmux.json   →  ~/.config/cmux/cmux.json
 claude/.claude/settings.json  →  ~/.claude/settings.json
 ```
 
-- **パッケージ**: `zsh` `git` `claude` `cmux` `ghostty` `nvim` `tmux` `vim` `raycast` `homebrew` `hammerspoon` `activitywatch`
+- **パッケージ**: `zsh` `git` `claude` `cmux` `ghostty` `nvim` `tmux` `vim` `homebrew` `hammerspoon` `activitywatch`
   - `setup/link.sh` がパッケージ直下のドットエントリを `$HOME` へ symlink する
   - ドットで始まらないファイル（`zsh/aliases.zsh`、`zsh/mac.zsh`）はリンクされず、
     `.zshrc` から `source ~/dotfiles/zsh/...` とパス指定で読み込む
-  - `.darwin-only` を置いたパッケージ（`raycast` `cmux` `homebrew` `hammerspoon` `activitywatch`）は macOS 以外ではリンクされない
+  - `.darwin-only` を置いたパッケージ（`cmux` `homebrew` `hammerspoon` `activitywatch`）は macOS 以外ではリンクされない
   - リンク先に**実ファイルがある場合は `.bak.<日時>` に退避**してから張る。新しいマシンで
     OS やインストーラが用意した `~/.zshrc` などを失わないため。`make link` は末尾に
     `作成 / 更新 / 変更なし / 退避 / 削除` の件数を出すので、意図しない変化に気づける
@@ -86,6 +86,7 @@ activitywatch/aw-insights.sh  # 今すぐ分析する (直近 14 日分。--days
 | `aw-insights.sh` | 集計結果を `claude -p` (読み取り専用ツールのみ) に渡してレポートを書かせる |
 | `insights-prompt.md` | Claude への指示。出力形式や参照する設定ファイルはここで変える |
 | `aw-prune.py` | 90 日より古い記録を毎日削除する |
+| `hammerspoon/.hammerspoon/app-keys.lua` | アプリ切り替え・よく開く URL・検索のショートカット (⌃⌘ + キー)。分析の提案はここへの追加として出る |
 | `hammerspoon/.hammerspoon/input-log.lua` | アプリをどうやって切り替えたか (ショートカット / Raycast / マウスなど) と、修飾キー付きの組み合わせの回数を記録する |
 | `zsh/.config/zsh/aw-cmdlog.zsh` | 実行したコマンドを、どの cmux タブで打ったかと一緒に 1 回ごとに記録する (履歴は重複を消すため別に取る) |
 
