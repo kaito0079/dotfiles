@@ -1,6 +1,6 @@
 # ~/.claude 設定 (dotfiles 管理分)
 
-このディレクトリは `scripts/link.sh` により `~/.claude/` 配下へ symlink される。
+このディレクトリは `setup/link.sh` により `~/.claude/` 配下へ symlink される。
 
 ## 配線
 

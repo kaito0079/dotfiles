@@ -12,4 +12,4 @@ if [ "$(uname)" != "Darwin" ] ; then
 	exit 1
 fi
 
-"${SCRIPT_DIR}"/scripts/init_mac.sh
+"${SCRIPT_DIR}"/setup/init_mac.sh
