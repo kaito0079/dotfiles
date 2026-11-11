@@ -11,6 +11,7 @@
 | `CLAUDE.md` | `claude/.claude/CLAUDE.md` | dotfiles (このリポ) |
 | `keybindings.json` | `claude/.claude/keybindings.json` | dotfiles (このリポ) |
 | `statusline.sh` | `claude/.claude/statusline.sh` | dotfiles (このリポ) |
+| `agents/` | `claude/.claude/agents/` | dotfiles (このリポ) |
 
 symlink はディレクトリ単位 (`hooks/` ごとリンク) なので、`hooks/` にファイルを
 追加すると再リンク不要で即 `~/.claude/hooks/` に現れる。
@@ -41,6 +42,16 @@ make link
   `CLAUDE_PLUGINS_DIR` で指定する
 - コピーには印 (`.copied-by-dotfiles`) を置き、印のあるものだけを上書き・削除する
 - 同じプラグインをマーケットプレイスからも入れると二重に読み込まれるため、入れない
+
+## サブエージェントの上書き (agents/)
+
+`agents/` には、組み込みのサブエージェントを同じ名前で上書きする定義だけを置く。
+プラグインのエージェントは `kaito-review:strict-review` のように名前空間が付き、
+組み込みを上書きできないため、ここ (`~/.claude/agents/`) に置く。
+
+| ファイル | 何をするか |
+| --- | --- |
+| `Explore.md` | 組み込みの Explore を `model: haiku` で動かす。既定ではメイン会話と同じモデル (Opus) で動くが、ファイル探しは単純な作業なので安いモデルで足りる (公式 docs: sub-agents#built-in-subagents)。上書きするとシステムプロンプトも置き換わるため、読み取り専用の指示と道具 (`Read, Grep, Glob, Bash`) を自前で書いている |
 
 ## mod
 
